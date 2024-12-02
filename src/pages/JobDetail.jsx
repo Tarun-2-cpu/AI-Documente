@@ -7,17 +7,15 @@ import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Form from 'react-bootstrap/Form';
-import InputGroup from 'react-bootstrap/InputGroup';
-import Input from 'react-bootstrap/InputGroup';
 import Swal from 'sweetalert2';
-
+import { Link } from 'react-router-dom'
 
 
 function JobDetail() {
 
 
   //modals state
-  const [modalShow, setModalShow] = useState(false);
+  // const [modalShow, setModalShow] = useState(false);
   const [fileDetailModal, setFileDetailModal] = useState(false);
   const [revisionModalShow, setRevisionModalShow] = useState(false);
   const [createNewTransmittal, setCreateNewTransmittal] = useState(false);
@@ -51,7 +49,7 @@ function JobDetail() {
 
   // outgoing transmittal
   const [outTransmittal, setOutTransmittal] = useState(false)
-  const [activeTab, setActiveTab] = useState("ENG");
+  // const [activeTab, setActiveTab] = useState("ENG");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [departments, setDepartments] = useState({
     ENG: [],
@@ -60,11 +58,11 @@ function JobDetail() {
   const [outgoingTransmittals, setOutgoingTransmittals] = useState([]);
 
 
-  const [fileCounts, setFileCounts] = useState({
-    ENG: 0,
-    QAQC: 0,
-    total: 0,
-  });
+  // const [fileCounts, setFileCounts] = useState({
+  //   ENG: 0,
+  //   QAQC: 0,
+  //   total: 0,
+  // });
 
   const [job, setJob] = useState(JSON.parse(localStorage.getItem('jobs')).find(j => j.jobId === localStorage.getItem('currentJobId')) || {});
   const [modalData, setModalData] = useState({
@@ -247,85 +245,13 @@ function JobDetail() {
   };
 
   // Function to render a document row in the table
-  function renderDocumentRow(doc, jobId) {
-    const tableBody = document.getElementById('incoming-docs-body');
-    const row = document.createElement('tr');
-
-    console.log(`data-srno= ${doc.srNo} data-jobid=${jobId}>${doc.revision}`);
-    row.innerHTML = `
-                <td>${doc.srNo}</td>
-                <td><a href="#" onclick="openAdditionalFieldsModal('${doc.srNo}')">${doc.fileName}</a></td>
-                <td>${doc.fileType}</td>
-                <td>${doc.fileSize}</td>
-                <td>${doc.lastModified}</td>
-                <td>${doc.pageCount}</td>
-                <td><a href="#" className="revision-link" data-srno="${doc.srNo}" data-jobid="${jobId}">${doc.revision}</a></td>
-                <td>
-                    <a href="${doc.fileLink}" target="_blank" title="Download">
-                        <i className="fas fa-download"> </i>
-                    </a> &nbsp; 
-                    <a href="#" onClick="openAdditionalFieldsModal('${doc.srNo}')" title="Add Additional Fields">
-                        <i className="fas fa-plus-circle"> </i>
-                    </a>
-                </td>
-              `;
-
-    function handleNotifyDepartments() {
-      const selectedDepartments = [];
-      document.querySelectorAll('.department-checkbox:checked').forEach(checkbox => {
-        selectedDepartments.push(checkbox.value);
-      });
-
-      if (selectedDepartments.length === 0) {
-        alert('Please select at least one department.');
-        return;
-      }
-
-      // Retrieve jobs and transmittal details from local storage
-      const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-      const jobId = sessionStorage.getItem('currentJobId');
-      const transmittalId = sessionStorage.getItem('currentTransmittalId'); // Assuming we save this when we open the notify modal
-      const job = jobs.find(j => j.jobId === jobId) || null;
-
-      if (job && job.transmittals) {
-        const transmittal = job.transmittals.find(t => t.transmittalId === transmittalId);
-
-        // Update notified departments and save back to local storage
-        transmittal.notifiedDepartments = selectedDepartments;
-        localStorage.setItem('jobs', JSON.stringify(jobs));
-
-        // Refresh the transmittals table
-
-        refreshTransmittalsTable(job);
-
-        // Close the notify modal
-
-
-        // closeNotifyModal();
-      }
-    }
-
-    // Function to select all departments if the "Select All" checkbox is checked
-    function toggleSelectAll() {
-      const isChecked = document.getElementById('selectAllDepartments').checked;
-      document.querySelectorAll('.department-checkbox').forEach(checkbox => {
-        checkbox.checked = isChecked;
-      });
-    }
-
-
-    tableBody.appendChild(row);
-
-    // Add event listener to open revision history modal when revision number is clicked
-
-
-    row.querySelector('.revision-link').addEventListener('click', openRevisionHistoryModal);
-  }
+  
+  
 
   const getPDFPageCount = (file, callback) => {
     const reader = new FileReader();
     reader.onload = function () {
-      const typedArray = new Uint8Array(reader.result);
+      // const typedArray = new Uint8Array(reader.result);
     };
     reader.readAsArrayBuffer(file);
   };
@@ -363,51 +289,8 @@ function JobDetail() {
     setFileDetailModal(true);
   }
 
-  const handleSaveChanges = () => {
-    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const jobId = localStorage.getItem('currentJobId');
-    const job = jobs.find(j => j.jobId === jobId) || null;
-
-    if (!job) {
-      Swal.fire('Error', 'Job not found.', 'error');
-      return;
-    }
-
-    const file = job.incomingDocs.find(doc => doc.srNo === modalData.srNo);
-    if (file) {
-      file.clientCode = modalData.clientCode;
-      file.fileDescription = modalData.fileDescription;
-      file.clientDocNo = modalData.clientDocNo;
-      file.docType = modalData.docType;
-
-      // Update localStorage
-      localStorage.setItem('jobs', JSON.stringify(jobs));
-
-      Swal.fire('Success', 'File details updated successfully!', 'success');
-      setModalShow(false);
-    } else {
-      Swal.fire('Error', 'File not found.', 'error');
-    }
-  };
 
 
-  // Function to generate preview based on file type (PDF, image, etc.)
-  const generatePreview = (file) => {
-    const fileType = file.fileType.toLowerCase();
-    if (fileType === 'pdf') {
-      return (
-        <iframe
-          src={file.revisions[file.revisions.length - 1].fileLink}
-          style={{ width: '100%', height: '100%' }}
-          title="File Preview"
-        />
-      );
-    } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileType)) {
-      return <img src={file.revisions[file.revisions.length - 1].fileLink} style={{ maxWidth: '100%', height: 'auto' }} alt="Preview" />;
-    } else {
-      return <p>Preview not available for this file type.</p>;
-    }
-  };
 
   // Close the modal
   const closeAdditionalFieldsModal = () => {
@@ -448,9 +331,6 @@ function JobDetail() {
 
 
 
-  const handleAddFieldsClick = (srNo) => {
-    openAdditionalFieldsModal(srNo); // Reuse your existing logic
-  };
 
   const handleFileNameClick = (srNo) => {
     openAdditionalFieldsModal(srNo); // Reuse the existing logic
@@ -491,7 +371,7 @@ function JobDetail() {
       revisions: file.revisions,
     });
 
-    setModalShow(true);
+    // setModalShow(true);
   };
 
 
@@ -519,12 +399,12 @@ function JobDetail() {
   const renderFilePreview = (fileType, fileLink) => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
-        return <iframe src={fileLink} style={{ width: '100%', height: '100%' }} />;
+        // return <iframe src={fileLink} style={{ width: '100%', height: '100%' }} />;
       case 'jpg':
       case 'jpeg':
       case 'png':
       case 'gif':
-        return <img src={fileLink} style={{ maxWidth: '100%', height: 'auto' }} />;
+        return <img src={fileLink} style={{ maxWidth: '100%', height: 'auto' }} alt=""/>;
       default:
         return <p>Preview not available for this file type.</p>;
     }
@@ -1003,21 +883,21 @@ function JobDetail() {
                     <tr key={doc.srNo}>
                       <td>{doc.srNo}</td>
                       <td>
-                        <a href="#"
+                        <Link to="#"
                           onClick={(e) => {
                             e.preventDefault();
                             handleFileNameClick(doc.srNo)
                           }}>
                           {doc.fileName}
-                        </a>
+                        </Link>
                       </td>
                       <td>{doc.fileType}</td>
                       <td>{doc.fileSize}</td>
                       <td>{doc.lastModified}</td>
                       <td>{doc.pageCount}</td>
                       <td>
-                        <a
-                          href="#"
+                        <Link
+                          to="#"
                           className="revision-link"
                           onClick={(e) => {
                             e.preventDefault(); // Prevent default anchor behavior
@@ -1025,21 +905,21 @@ function JobDetail() {
                           }}
                         >
                           {doc.revision}
-                        </a>
+                        </Link>
                       </td>
                       <td>
-                        <a href={doc.fileLink} download={doc.fileName} target="_blank" rel="noopener noreferrer" title="Download">
+                        <Link to={doc.fileLink} download={doc.fileName} target="_blank" rel="noopener noreferrer" title="Download">
                           <i className="fas fa-download"></i>
-                        </a>
+                        </Link>
                         &nbsp;
-                        <a href="#"
+                        <Link to="#"
                           onClick={(e) => {
                             e.preventDefault(); // Prevent default anchor behavior
                             handleRevisionClick(jobID, doc.srNo);
                           }}
                           title="Add Additional Fields">
                           <i className="fas fa-plus-circle"></i>
-                        </a>
+                        </Link>
                       </td>
                     </tr>
                   ))
@@ -1107,9 +987,9 @@ function JobDetail() {
                       <td>{typeof revision.hash === "string" ? revision.hash : "Invalid Hash"}</td>
                       <td>
                         {typeof revision.fileLink === "string" ? (
-                          <a href={revision.fileLink} target="_blank" rel="noopener noreferrer">
+                          <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer">
                             View
-                          </a>
+                          </Link>
                         ) : (
                           "No File Link"
                         )}
@@ -1450,9 +1330,9 @@ function JobDetail() {
                               <td>{file.pageCount}</td>
                               <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
                               <td>
-                                <a href={file.fileLink} download={file.fileName} target="_blank" rel="noopener noreferrer">
+                                <Link to={file.fileLink} download={file.fileName} target="_blank" rel="noopener noreferrer">
                                   View
-                                </a>
+                                </Link>
                               </td>
                             </tr>
                           ))}
