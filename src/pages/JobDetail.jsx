@@ -262,7 +262,7 @@ function JobDetail() {
   function openAdditionalFieldsModal(srNo) {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const jobId = localStorage.getItem('currentJobId');
-    const job = jobs.find(j => j.jobId === jobId);
+    const job = jobs.find(j => j.jobId === jobID);
 
     if (!job || !job.incomingDocs) {
       Swal.fire('Error', 'No incoming documents found for this job.', 'error');
