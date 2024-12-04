@@ -863,9 +863,9 @@ function JobDetail() {
           <h6 className="text-lg fw-semibold mb-0">Incoming Documents</h6>
         </div>
         <div className="card-body p-24">
-          <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4">
+          <div className="">
 
-            <Table bordered>
+            <Table bordered >
               <thead>
                 <tr>
                   <th style={{ width: '15%', textAlign: "center" }}>Sr.NO.</th>
@@ -883,7 +883,7 @@ function JobDetail() {
                 {incomingDocs?.length > 0 ? (
 
                   incomingDocs.map((doc) => (
-                    <tr key={doc.srNo}>
+                    <tr key={doc.srNo} className="text-center align-middle">
                       <td>{doc.srNo}</td>
                       <td>
                         <Link to="#"
@@ -935,8 +935,7 @@ function JobDetail() {
             </Table>
 
             <Button
-              className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-4 py-4"
-              style={{ minWidth: "120px", maxWidth: "180px" }}
+              className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-5 py-3"
               onClick={() => addClientDocs()}>
               Add Client Docs
             </Button>
@@ -1133,7 +1132,7 @@ function JobDetail() {
           <h6 className="text-lg fw-semibold mb-0">Transmittals</h6>
         </div>
         <div className="card-body p-24">
-          <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4">
+          <div className="">
 
             <Table bordered id="transmittalsTable" className="transmittal-table">
               <thead>
@@ -1147,14 +1146,14 @@ function JobDetail() {
               </thead>
               <tbody id="transmittalsBody">
                 {transmittals.map((transmittal) => (
-                  <tr key={transmittal.id}>
+                  <tr key={transmittal.id} className="text-center align-middle">
                     <td onClick={() => viewTransmittalDetails(transmittal.date)}>{transmittal.id}</td>
                     <td onClick={() => viewTransmittalDetails(transmittal.date)}>{transmittal.date}</td>
                     <td onClick={() => viewTransmittalDetails(transmittal.date)}>{transmittal.summary}</td>
                     <td>{transmittal.notifiedDepartments?.join(', ') || 'None'}</td>
                     <td>
                       <button
-                        className="notify-btn btn rounded-pill btn btn-outline-primary text-primary-600 radius-8 px-4 py-4"
+                        className="notify-btn btn rounded-pill btn btn-outline-primary text-primary-600 radius-8 px-3 py-2"
                         onClick={() => openNotifyModal(transmittal.id)}
                       >
                         Send Transmittal
@@ -1166,9 +1165,8 @@ function JobDetail() {
             </Table>
 
             <Button
-              className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-4 py-4 create-transmittal-button"
-              style={{ minWidth: "120px", maxWidth: "250px" }}
-              onClick={() => openCreateTransmittalModal()}
+                className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-5 py-3 create-transmittal-button"
+                onClick={() => openCreateTransmittalModal()}
             >
 
               Create New Transmittal
@@ -1222,7 +1220,7 @@ function JobDetail() {
                       </thead>
                       <tbody id="transmittalFilesBody">
                         {files.map((file) => (
-                          <tr key={file.srNo}>
+                          <tr key={file.srNo} className="text-center align-middle">
                             <td style={{ textAlign: 'center' }}>
                               <Form.Check
                                 type="checkbox"
@@ -1325,7 +1323,7 @@ function JobDetail() {
                         </thead>
                         <tbody>
                           {transmittalDetails.files.map((file, index) => (
-                            <tr key={index}>
+                            <tr key={index} className="text-center align-middle">
                               <td>{file.fileName}</td>
                               <td>{file.fileType?.toUpperCase()}</td>
                               <td>{file.fileSize}</td>
@@ -1473,8 +1471,7 @@ function JobDetail() {
             ))}
           </div>
           <Button
-            className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-6 py-4"
-            style={{ minWidth: "120px", maxWidth: "350px" }}
+            className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-5 py-3"
             onClick={openOutgoingTransmittalModal}>
             New Outgoing Transmittal
           </Button>
