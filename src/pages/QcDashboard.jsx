@@ -43,8 +43,8 @@ function QcDashboard() {
           <h6 className="text-lg fw-semibold mb-0">QA/QC Dashboard</h6>
         </div>
         <div className="card-body p-24">
-          <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4">
-            <div className="col">
+          <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4" style={{width : "full"}}>
+            <div className="col" style={{width: "33%"}}>
               <div className="card shadow-none border bg-gradient-start-1">
                 <div className="card-body p-20">
                   <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -65,7 +65,7 @@ function QcDashboard() {
               </div>
               {/* card end */}
             </div>
-            <div className="col">
+            <div className="col" style={{width: "33%"}}>
               <div className="card shadow-none border bg-gradient-start-2">
                 <div className="card-body p-20">
                   <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -86,7 +86,7 @@ function QcDashboard() {
               </div>
               {/* card end */}
             </div>
-            <div className="col">
+            <div className="col" style={{width: "33%"}}>
               <div className="card shadow-none border bg-gradient-start-3">
                 <div className="card-body p-20">
                   <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
