@@ -93,6 +93,7 @@ function JobDetail() {
 
   useEffect(() => {
     const jobId = getQueryParam('jobId');
+      
     const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
     const job = jobs.find((j) => j.jobId === jobId);
 
@@ -132,11 +133,11 @@ function JobDetail() {
 
   // Update modal data when revision modal is shown.
   useEffect(() => {
-    if (revisionModalShow && selectedJobId && selectedSrNo) {
+    if (revisionModalShow && job && selectedSrNo) {
       const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
-      const job = jobs.find((j) => j.jobId === selectedJobId);
-      if (job && job.incomingDocs) {
-        const file = job.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
+      const jobe = jobs.find((j) => j.jobId === job);
+      if (jobe && jobe.incomingDocs) {
+        const file = jobe.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
         if (file) {
           setModalData({
             fileName: file.fileName,
@@ -150,7 +151,7 @@ function JobDetail() {
         alert('No job data found.');
       }
     }
-  }, [revisionModalShow, selectedJobId, selectedSrNo]);
+  }, [revisionModalShow, job, selectedSrNo]);
 
 
 
@@ -261,8 +262,8 @@ function JobDetail() {
   // Open modal when a row in the table is clicked fine name clicked
   function openAdditionalFieldsModal(srNo) {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    // const jobId = localStorage.getItem('currentJobId');
-    const job = jobs.find(j => j.jobId === jobID);
+    const jobId = localStorage.getItem('currentJobId');
+    const job = jobs.find(j => j.jobId === jobId);
 
     if (!job || !job.incomingDocs) {
       Swal.fire('Error', 'No incoming documents found for this job.', 'error');
