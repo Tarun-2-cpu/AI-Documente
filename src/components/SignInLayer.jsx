@@ -1,6 +1,7 @@
 import { Icon } from '@iconify/react/dist/iconify.js'
 import React, { useState } from 'react'
 import { Link,useNavigate } from 'react-router-dom'
+import ClearCacheButton from '../masterLayout/ClearCacheButton ';
 
 
 const SignInLayer = () => {
@@ -87,6 +88,9 @@ const SignInLayer = () => {
                             {" "}
                             Sign In
                         </button>
+                        <div style = {{ display: "flex", alignItems:"center", justifyContent: "end", width: "100%", marginTop: "30px"  }}>
+                            <ClearCacheButton />
+                        </div>
                     </form>
                 </div>
             </div>
