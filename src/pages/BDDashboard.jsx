@@ -2,11 +2,11 @@ import { Icon } from '@iconify/react/dist/iconify.js'
 import React, { useState, useEffect } from 'react'
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
-import useReactApexChart from "../hook/useReactApexChart"
+// import useReactApexChart from "../hook/useReactApexChart"
 import { useNavigate } from 'react-router-dom';
 
 function BDDashboard() {
-  let { createChartThree } = useReactApexChart()
+  // let { createChartThree } = useReactApexChart()
   const [showModal, setShowModal] = useState(false);
   const [jobId, setJobId] = useState('');
   const [jobName, setJobName] = useState('');
@@ -163,74 +163,73 @@ function BDDashboard() {
                       </button>
                     </div>
                     <div className="modal-body">
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" >Job ID</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" >Job ID</label>
                         </div>
                         <input type="text" className="form-control" id="JobId" value={jobId} onChange={(e) => setJobId(e.target.value)} placeholder='Job01' />
                       </div>
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">Job Name</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Job Name</label>
+                          <input type="text" className="form-control" id="JobName" value={jobName} onChange={(e) => setJobName(e.target.value)} placeholder="Job-Name" />
                         </div>
-                        <input type="text" className="form-control" id="JobName" value={jobName} onChange={(e) => setJobName(e.target.value)} placeholder="Job-Name" />
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">Job Description</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Job Description</label>
                         </div>
                         <textarea className="form-control" id="description" value={description} onChange={(e) => setDescription(e.target.value)} aria-label="With textarea" placeholder="Job Description"></textarea>
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">PO Number</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">PO Number</label>
                         </div>
                         <input type="text" className="form-control" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} id="poNumber" placeholder='PO#11' />
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">PO Date</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">PO Date</label>
                         </div>
                         <input type="date" className="form-control mb-3" value={poDate} onChange={(e) => setPoDate(e.target.value)} />
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text">PO File</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="">PO File</label>
                         </div>
-                        <div className="custom-file">
+                        <div className="">
                           <input type="file" className=" form-control" value={file} onChange={(e) => setFile(e.target.value)} id="inputGroupFile01" />
-                          <label className="custom-file-label" for="inputGroupFile01">Choose file</label>
                         </div>
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">Sub Job</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Sub Job</label>
                         </div>
                         <input type="text" className="form-control" id="subJob" placeholder="Sub-Job#1" />
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">Client</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Client</label>
                         </div>
                         <input type="text" className="form-control" id="client" placeholder="Aramco" />
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">EPC</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">EPC</label>
                         </div>
                         <input type="text" className="form-control" id="epc" placeholder="EPC#001" />
                       </div>
 
-                      <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                          <span className="input-group-text" id="">End User</span>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">End User</label>
                         </div>
                         <input type="text" className="form-control" id="endUser" placeholder='EU#123' />
                       </div>

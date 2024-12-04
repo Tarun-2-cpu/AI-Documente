@@ -261,7 +261,7 @@ function JobDetail() {
   // Open modal when a row in the table is clicked fine name clicked
   function openAdditionalFieldsModal(srNo) {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const jobId = localStorage.getItem('currentJobId');
+    // const jobId = localStorage.getItem('currentJobId');
     const job = jobs.find(j => j.jobId === jobID);
 
     if (!job || !job.incomingDocs) {
@@ -399,10 +399,13 @@ function JobDetail() {
   const renderFilePreview = (fileType, fileLink) => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
-        // return <iframe src={fileLink} style={{ width: '100%', height: '100%' }} />;
-      case 'jpg':
+        return <img src={fileLink} style={{ maxWidth: '100%', height: 'auto' }} alt=""/>;
+        case 'jpg':
+          break;
       case 'jpeg':
+        break;
       case 'png':
+        break;
       case 'gif':
         return <img src={fileLink} style={{ maxWidth: '100%', height: 'auto' }} alt=""/>;
       default:
@@ -603,11 +606,11 @@ function JobDetail() {
   };
 
 
-  const refreshTransmittalsTable = (job) => {
-    if (job?.transmittals) {
-      setTransmittals([...job.transmittals]); // Update state to re-render the table
-    }
-  };
+  // const refreshTransmittalsTable = (job) => {
+  //   if (job?.transmittals) {
+  //     setTransmittals([...job.transmittals]); // Update state to re-render the table
+  //   }
+  // };
 
 
 
@@ -1043,23 +1046,23 @@ function JobDetail() {
           <Modal.Body id="additional-fields-form">
 
             <div className="">
-              <div className="input-group mb-3">
-                <div className="input-group-prepend">
-                  <span className="input-group-text" id="">Client Code</span>
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">Client Code</label>
                 </div>
                 <input type="text" className="form-control" value={modalData.clientCode} onChange={(e) => setModalData({ ...modalData, clientCode: e.target.value })} />
               </div>
 
-              <div className="input-group mb-3">
-                <div className="input-group-prepend">
-                  <span className="input-group-text" id="">File Description</span>
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">File Description</label>
                 </div>
                 <input type="text" className="form-control" value={modalData.fileDescription} onChange={(e) => setModalData({ ...modalData, fileDescription: e.target.value })} />
               </div>
 
-              <div className="input-group mb-3">
-                <div className="input-group-prepend">
-                  <span className="input-group-text" id="">Client Doc No.</span>
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">Client Doc No.</label>
                 </div>
                 <input
                   type="text"
@@ -1070,9 +1073,9 @@ function JobDetail() {
               </div>
 
 
-              <div className="input-group mb-5">
-                <div className="input-group-prepend">
-                  <span className="input-group-text" id="">Doc Type:</span>
+              <div className="mb-5">
+                <div className="">
+                  <label className="" id="">Doc Type:</label>
                 </div>
                 <select type="text"
                   value={modalData.docType}
