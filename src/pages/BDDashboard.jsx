@@ -26,8 +26,21 @@ function BDDashboard() {
 
 
   function createJob() {
+
     if (!jobId || !jobName || !poNumber || !poDate) {
       alert('Please fill out all required fields!');
+      return;
+    }
+    
+    // if(incomingDocs.length === 0){
+    //   alert('please add the PO file');
+    //   return;
+    // }
+
+
+      // Check for duplicate jobId
+    if (jobs.some((job) => job.jobId === jobId)) {
+      alert(`A job with ID "${jobId}" already exists!`);
       return;
     }
 
@@ -278,7 +291,7 @@ function BDDashboard() {
 
 
 
-
+            
     </MasterLayout>
   )
 }

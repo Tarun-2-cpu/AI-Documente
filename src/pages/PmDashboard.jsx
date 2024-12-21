@@ -1,12 +1,12 @@
 import { Icon } from '@iconify/react/dist/iconify.js'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect} from 'react'
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
 import swal from 'sweetalert';
-
+import { useNavigate } from 'react-router-dom';
 
 
 function PmDashboard() {
@@ -18,6 +18,7 @@ function PmDashboard() {
   const [pendingTransmittals, setPendingTransmittals] = useState(0);
   const [permissions, setPermissions] = useState([]);
 
+  const navigate = useNavigate();
 
 
   useEffect(() => {
@@ -53,6 +54,11 @@ function PmDashboard() {
     setModalShow(true)
   }
 
+  function redirect(job){
+    localStorage.setItem('currentJobId', job.jobId);
+    navigate('/project-management-job-detail');   // PM Job Details Page
+  }
+
   function addPermissionRow() {
     setPermissions([...permissions, { name: '', email: '', read: false, update: false, notify: false }]);
   }
@@ -63,9 +69,7 @@ function PmDashboard() {
     );
     setPermissions(updatedPermissions);
   };
-
-
-
+  
   function savePermissions() {
     const jobId = localStorage.getItem('currentJobId');
     const jobIndex = jobs.findIndex(j => j.jobId === jobId);
@@ -78,7 +82,7 @@ function PmDashboard() {
     }
   }
   
-
+  
 
   return (
     <MasterLayout>
@@ -274,7 +278,7 @@ function PmDashboard() {
               jobs.map((job, index) => (
 
                 <div className="col">
-                  <div className="card shadow-none border bg-gradient-end-3" key={index} onClick={() => { }}>
+                  <div className="card shadow-none border bg-gradient-end-3" key={index} onClick={() => redirect(job)}>
                     <div className="card-body p-20">
                       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div className="flex-grow-1">

@@ -36,6 +36,7 @@ function JobDetail() {
   const [summary, setSummary] = useState('');
   const [jobs, setJobs] = useState(JSON.parse(localStorage.getItem('jobs')) || []);
 
+  const[currentJob, setCurrentJob] = useState('');
 
   //transmittal
   const [files, setFiles] = useState([]); // Files data with revisions
@@ -93,15 +94,16 @@ function JobDetail() {
 
   useEffect(() => {
     const jobId = getQueryParam('jobId');
-      
     const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
     const job = jobs.find((j) => j.jobId === jobId);
 
     if (jobId) {
+      console.log(jobId)
       localStorage.setItem('currentJobId', jobId);
       const job = jobs?.find((j) => j.jobId === jobId) || null;
 
       if (job) {
+        setCurrentJob(job);
         setJobID(job.jobId);
         setJobName(job.jobName);
         setDescription(job.description);
@@ -134,10 +136,9 @@ function JobDetail() {
   // Update modal data when revision modal is shown.
   useEffect(() => {
     if (revisionModalShow && job && selectedSrNo) {
-      const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
-      const jobe = jobs.find((j) => j.jobId === job);
-      if (jobe && jobe.incomingDocs) {
-        const file = jobe.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
+      
+      if (currentJob) {
+        const file = currentJob.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
         if (file) {
           setModalData({
             fileName: file.fileName,
@@ -152,11 +153,6 @@ function JobDetail() {
       }
     }
   }, [revisionModalShow, job, selectedSrNo]);
-
-
-
-
-
 
   // Handle file upload
   const handleFileUpload = (event) => {
@@ -206,15 +202,12 @@ function JobDetail() {
     });
 
 
-
-
-
-
     // Update job data in localStorage
     const updatedJob = { ...job, incomingDocs: newDocs };
     setJob(updatedJob);
     saveJobData(jobID, updatedJob);
   };
+
 
   const addClientDocs = () => {
     fileInputRef.current.click();
@@ -247,8 +240,6 @@ function JobDetail() {
 
   // Function to render a document row in the table
   
-  
-
   const getPDFPageCount = (file, callback) => {
     const reader = new FileReader();
     reader.onload = function () {
@@ -257,16 +248,23 @@ function JobDetail() {
     reader.readAsArrayBuffer(file);
   };
 
-
-
   // Open modal when a row in the table is clicked fine name clicked
   function openAdditionalFieldsModal(srNo) {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const jobId = localStorage.getItem('currentJobId');
+    console.log("alll jobs:", jobs);
+    const jobId = getQueryParam('jobId');
     const job = jobs.find(j => j.jobId === jobId);
 
-    if (!job || !job.incomingDocs) {
-      Swal.fire('Error', 'No incoming documents found for this job.', 'error');
+    console.log("open additional field modal",  jobs);
+
+    console.log(jobs);
+
+    console.log(jobId);
+
+    console.log(job);
+
+    if (!job) {
+      console.error(`No job found for jobId: ${jobId}`);
       return;
     }
 
@@ -289,9 +287,6 @@ function JobDetail() {
     // Display the modal
     setFileDetailModal(true);
   }
-
-
-
 
   // Close the modal
   const closeAdditionalFieldsModal = () => {
@@ -330,28 +325,23 @@ function JobDetail() {
     }
   };
 
-
-
-
   const handleFileNameClick = (srNo) => {
     openAdditionalFieldsModal(srNo); // Reuse the existing logic
   };
 
-
   // Revision modal start
-
   const openRevisionHistoryModal = (srNo) => {
     console.log("openRevisionHistoryModal triggered with srNo:", srNo);
 
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const jobId = localStorage.getItem('currentJobId');
+    const jobId = getQueryParam('jobId');
     console.log("Retrieved jobId:", jobId);
     console.log("Retrieved jobs array:", jobs);
 
     const job = jobs.find((j) => j.jobId === jobId);
-    if (!job || !job.incomingDocs) {
+    if (!job) {
       console.error("Error: Job or incomingDocs not found");
-      showErrorAlert("Job or incomingDocs not found.");
+      showErrorAlert("Job not found.");
       return;
     }
 
@@ -375,8 +365,6 @@ function JobDetail() {
     // setModalShow(true);
   };
 
-
-
   const openRevisionModal = (jobId, srNo) => {
     console.log("openRevisionModal triggered with jobId:", jobId, "and srNo:", srNo);
 
@@ -389,13 +377,10 @@ function JobDetail() {
     console.log("Revision modal visibility set to true");
   };
 
-
   const handleRevisionClick = (jobId, srNo) => {
     openRevisionHistoryModal(srNo);
     openRevisionModal(jobId, srNo)
   };
-
-
 
   const renderFilePreview = (fileType, fileLink) => {
     switch (fileType.toLowerCase()) {
@@ -415,7 +400,6 @@ function JobDetail() {
   };
 
   //work here
-
   // Upload a new revision.
   const uploadNewRevision = async () => {
     console.log("Selected job ID:", selectedJobId);
@@ -449,7 +433,7 @@ function JobDetail() {
 
         // Generate new revision
         const newRevision = {
-          revision: (doc.revisions?.length || 0) + 1,
+          revision: (doc.revisions?.length || 0),
           hash: await generateFileHash(file),
           fileLink: URL.createObjectURL(file),
           transmittalId: 'Pending',
@@ -458,7 +442,7 @@ function JobDetail() {
 
         // Update document revisions and revision count
         doc.revisions = [...(doc.revisions || []), newRevision];
-        doc.revision = doc.revisions.length; // Update the revision count
+        doc.revision = doc.revisions.length - 1; // Update the revision count
 
         // Save updated data to localStorage
         localStorage.setItem('jobs', JSON.stringify(jobs));
@@ -485,11 +469,6 @@ function JobDetail() {
     }
   };
 
-
-
-
-
-
   function createUniqueTransmittalID(jobId) {
     // Retrieve the jobs from localStorage
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
@@ -506,7 +485,6 @@ function JobDetail() {
   }
 
   //open create modal
-
   function openCreateTransmittalModal() {
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     const jobId = localStorage.getItem("currentJobId");
@@ -526,6 +504,7 @@ function JobDetail() {
     setFiles(fileData); // Update state with files
     setCreateNewTransmittal(true); // Open modal
   };
+
   // Handle "Select All" checkbox
   const toggleSelectAllFiles = (e) => {
     const isChecked = e.target.checked;
@@ -545,7 +524,6 @@ function JobDetail() {
   };
 
   //handle create transmittal
-
   const createTransmittal = () => {
     if (!files.some((file) => file.selected)) {
       alert('Please select at least one file.');
@@ -606,14 +584,11 @@ function JobDetail() {
     setCreateNewTransmittal(false);
   };
 
-
   // const refreshTransmittalsTable = (job) => {
   //   if (job?.transmittals) {
   //     setTransmittals([...job.transmittals]); // Update state to re-render the table
   //   }
   // };
-
-
 
   function viewTransmittalDetails(date) {
     const jobsData = localStorage.getItem("jobs");
@@ -666,12 +641,10 @@ function JobDetail() {
   }
 
   // open notify modal
-
   function openNotifyModal(id) {
     setNotifyModal(true);
     setCurrentTransmittalId(id);
   }
-
 
   const handleSelectAllChange = () => {
     setSelectAll(!selectAll);
@@ -696,7 +669,6 @@ function JobDetail() {
         : [...prev, value]
     );
   };
-
 
   const handleSave = () => {
     if (selectedDepartments.length === 0) {
@@ -731,7 +703,6 @@ function JobDetail() {
   };
 
   // outgoing modal
-
   const openOutgoingTransmittalModal = () => {
     setOutTransmittal(true);
     loadDepartmentFiles();
@@ -790,7 +761,6 @@ function JobDetail() {
         : [...prev, selectedFile]
     );
   };
-
 
   if (jobNotFound) {
     alert('Job not found');

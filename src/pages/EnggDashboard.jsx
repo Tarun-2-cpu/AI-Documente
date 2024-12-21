@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react/dist/iconify.js'
 import React, { useState, useEffect } from 'react'
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -12,6 +13,7 @@ function EnggDashboard() {
   const [pendingActions, setPendingActions] = useState(0);
   const [dueDates, setDueDates] = useState(0);
 
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
@@ -30,6 +32,12 @@ function EnggDashboard() {
 
 
   }, [])
+
+  function redirect(job){
+    localStorage.setItem('currentJobId', job.jobId);
+    navigate('/engineering-job-detail');   // PM Job Details Page
+  }
+
 
   return (
     <MasterLayout>
@@ -140,7 +148,7 @@ function EnggDashboard() {
             {
               jobs.map((job, index) => (
                 <div className="col">
-                  <div className="card shadow-none border bg-gradient-end-3" key={index}>
+                  <div className="card shadow-none border bg-gradient-end-3" key={index} onClick={() => redirect(job)}>
                     <div className="card-body p-20">
                       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div className="flex-grow-1">
