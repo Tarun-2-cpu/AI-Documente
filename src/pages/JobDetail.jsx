@@ -48,16 +48,6 @@ function JobDetail() {
   // notify 
   const [selectedDepartments, setSelectedDepartments] = useState([]);
 
-  // outgoing transmittal
-  const [outTransmittal, setOutTransmittal] = useState(false)
-  // const [activeTab, setActiveTab] = useState("ENG");
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [departments, setDepartments] = useState({
-    ENG: [],
-    QAQC: [],
-  });
-  const [outgoingTransmittals, setOutgoingTransmittals] = useState([]);
-
 
   // const [fileCounts, setFileCounts] = useState({
   //   ENG: 0,
@@ -79,6 +69,34 @@ function JobDetail() {
 
   const fileInputRef = useRef(null);
 
+  
+  useEffect(() => {
+    const jobId = getQueryParam('jobId');
+    localStorage.setItem('currentJobId', jobId);
+    const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
+    const job = jobs.find((j) => j.jobId === jobId);
+
+    if (job) {
+      setCurrentJob(job);
+      setJobID(job.jobId);
+      setJobName(job.jobName);
+      setIncomingDocs(job.incomingDocs || []);
+      setDescription(job.description);
+      setPONumber(job.poNumber);
+      setPoDate(job.poDate);
+      setTransmittals(job.transmittals || []);
+      setIncomingDocs(job.incomingDocs || []);
+
+      // if (job && job.incomingDocs) {
+      //   job.incomingDocs.forEach(doc => renderDocumentRow(doc, job.jobId));
+      // }
+    } else {
+      console.error('Job with specified ID not found');
+      setJobNotFound(true);
+    }
+  }, []);
+
+
   const showErrorAlert = () => {
     Swal.fire({
       icon: 'error',
@@ -92,79 +110,61 @@ function JobDetail() {
     return urlParams.get(param);
   }
 
-  useEffect(() => {
-    const jobId = getQueryParam('jobId');
-    const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
-    const job = jobs.find((j) => j.jobId === jobId);
-
-    if (jobId) {
-      console.log(jobId)
-      localStorage.setItem('currentJobId', jobId);
-      const job = jobs?.find((j) => j.jobId === jobId) || null;
-
-      if (job) {
-        setCurrentJob(job);
-        setJobID(job.jobId);
-        setJobName(job.jobName);
-        setDescription(job.description);
-        setPONumber(job.poNumber);
-        setPoDate(job.poDate);
-        setIncomingDocs(job.incomingDocs || []);
-
-        // if (job && job.incomingDocs) {
-        //   job.incomingDocs.forEach(doc => renderDocumentRow(doc, job.jobId));
-        // }
-      } else {
-        console.error('Job with specified ID not found in localStorage data.');
-        setJobNotFound(true);
-      }
-    } else {
-      console.error('No jobId found in query params.');
-      setJobNotFound(true);
-    }
-
-    if (job) {
-      setTransmittals(job.transmittals || []);
-    }
-
-    const savedTransmittals = JSON.parse(localStorage.getItem("outgoingTransmittals")) || [];
-    setOutgoingTransmittals(savedTransmittals);
-
-  }, []);
-
 
   // Update modal data when revision modal is shown.
-  useEffect(() => {
-    if (revisionModalShow && job && selectedSrNo) {
+  // useEffect(() => {
+  //   if (revisionModalShow && job && selectedSrNo) {
       
-      if (currentJob) {
-        const file = currentJob.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
-        if (file) {
-          setModalData({
-            fileName: file.fileName,
-            revisions: file.revisions || [],
-          });
+  //     if (currentJob) {
+  //       const file = currentJob.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
+  //       if (file) {
+  //         setModalData({
+  //           fileName: file.fileName,
+  //           revisions: file.revisions || [],
+  //         });
 
-        } else {
-          alert('No file found for the given SR number.');
-        }
-      } else {
-        alert('No job data found.');
-      }
-    }
-  }, [revisionModalShow, job, selectedSrNo]);
+  //       } else {
+  //         alert('No file found for the given SR number.');
+  //       }
+  //     } else {
+  //       alert('No job data found.');
+  //     }
+  //   }
+  // }, [revisionModalShow, job, selectedSrNo]);
+
+
+
 
   // Handle file upload
+  
   const handleFileUpload = (event) => {
     console.log("File upload event triggered:", event.target.files);
 
-    if (!event || !event.target || !event.target.files) {
+    if (!event?.target?.files) {
       console.error("File input event is not defined correctly.");
       return;
     }
 
     const files = event.target.files;
-    let newDocs = [...incomingDocs];
+    const jobId = localStorage.getItem('currentJobId');
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const job = jobs.find(j => j.jobId === jobId);
+
+    if (!job) {
+      console.error('Job not found!');
+      return;
+    }  
+
+    console.log(jobId);
+    console.log(jobs);
+    console.log(job);
+
+    
+
+    let newDocs = [...(job.incomingDocs || [])];
+
+    console.log("new docs", newDocs); 
+    console.log('State updated with incomingDocs:', newDocs);
 
     Array.from(files).forEach((file) => {
       const srNo = `ZE-DOC-${jobID}-${newDocs.length + 1}`;
@@ -194,6 +194,7 @@ function JobDetail() {
           fileDetails.pageCount = pageCount;
           newDocs.push(fileDetails);
           setIncomingDocs([...newDocs]); // Update state with new docs
+          updateJobData(jobId, newDocs, jobs); // Update job data after processing PDF
         });
       } else {
         newDocs.push(fileDetails);
@@ -201,12 +202,19 @@ function JobDetail() {
       }
     });
 
-
-    // Update job data in localStorage
-    const updatedJob = { ...job, incomingDocs: newDocs };
-    setJob(updatedJob);
-    saveJobData(jobID, updatedJob);
+    setIncomingDocs(newDocs); // React state
+    updateJobData(jobId, newDocs, jobs);
   };
+
+  function updateJobData (jobId, newDocs, jobs){
+    const jobIndex = jobs.findIndex(j => j.jobId === jobId);
+    if (jobIndex !== -1) {
+      // Update the job's incomingDocs while preserving other job details
+      jobs[jobIndex] = { ...jobs[jobIndex], incomingDocs: newDocs };
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+      console.log('Updated job data saved to localStorage:', jobs[jobIndex]);
+    }
+  }
 
 
   const addClientDocs = () => {
@@ -265,6 +273,7 @@ function JobDetail() {
 
     if (!job) {
       console.error(`No job found for jobId: ${jobId}`);
+      alert(`No job found for jobId: ${jobId}`);
       return;
     }
 
@@ -273,6 +282,8 @@ function JobDetail() {
       Swal.fire('Error', 'File not found.', 'error');
       return;
     }
+
+    console.log(file);
 
     // Pre-fill form fields in the modal
     setModalData({
@@ -293,8 +304,10 @@ function JobDetail() {
     setFileDetailModal(false);
   };
 
+
   // Save additional fields and update session storage
   const saveAdditionalFields = () => {
+    
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const jobId = localStorage.getItem('currentJobId');
     const job = jobs.find(j => j.jobId === jobId);
@@ -325,6 +338,7 @@ function JobDetail() {
     }
   };
 
+
   const handleFileNameClick = (srNo) => {
     openAdditionalFieldsModal(srNo); // Reuse the existing logic
   };
@@ -339,6 +353,7 @@ function JobDetail() {
     console.log("Retrieved jobs array:", jobs);
 
     const job = jobs.find((j) => j.jobId === jobId);
+    
     if (!job) {
       console.error("Error: Job or incomingDocs not found");
       showErrorAlert("Job not found.");
@@ -346,6 +361,7 @@ function JobDetail() {
     }
 
     const file = job.incomingDocs.find((doc) => doc.srNo === srNo);
+    
     if (!file || !file.revisions) {
       console.error("Error: File or revisions not found");
       showErrorAlert("File or revisions not found.");
@@ -582,13 +598,14 @@ function JobDetail() {
     setSummary('');
     setFiles([]);
     setCreateNewTransmittal(false);
+    refreshTransmittalsTable(job)
   };
 
-  // const refreshTransmittalsTable = (job) => {
-  //   if (job?.transmittals) {
-  //     setTransmittals([...job.transmittals]); // Update state to re-render the table
-  //   }
-  // };
+  const refreshTransmittalsTable = (job) => {
+    if (job?.transmittals) {
+      setTransmittals([...job.transmittals]); // Update state to re-render the table
+    }
+  };
 
   function viewTransmittalDetails(date) {
     const jobsData = localStorage.getItem("jobs");
@@ -605,12 +622,16 @@ function JobDetail() {
     }
 
     const job = jobs.find((j) => j.jobId === jobId);
+    
     if (!job) {
       console.error(`Job with ID ${jobId} not found.`);
       return alert("Job not found.");
     }
 
     const transmittal = job.transmittals?.find((t) => t.date === date);
+
+    console.log(transmittal);
+    
     if (!transmittal) {
       console.error(`Transmittal for date ${date} not found.`);
       return alert("Transmittal not found.");
@@ -629,8 +650,14 @@ function JobDetail() {
       },
       files: transmittal.files.map((file) => {
         const doc = job.incomingDocs?.find((d) => d.srNo === file.srNo);
+        console.log(doc);
         return {
           ...doc,
+          name: file.fileName,
+          type: file.fileType,
+          size: file.fileSize,
+          modified:file.lastModified,
+          count:file.pageCount,
           revision: file.revision,
           fileLink: file.fileLink,
         };
@@ -639,6 +666,8 @@ function JobDetail() {
 
     setTransmittalDetailModal(true);
   }
+
+  console.log(transmittalDetails);
 
   // open notify modal
   function openNotifyModal(id) {
@@ -662,6 +691,8 @@ function JobDetail() {
     }
   };
 
+
+
   const handleCheckboxChange = (value) => {
     setSelectedDepartments((prev) =>
       prev.includes(value)
@@ -669,6 +700,8 @@ function JobDetail() {
         : [...prev, value]
     );
   };
+
+  // notify department
 
   const handleSave = () => {
     if (selectedDepartments.length === 0) {
@@ -702,70 +735,15 @@ function JobDetail() {
     setNotifyModal(false);
   };
 
-  // outgoing modal
-  const openOutgoingTransmittalModal = () => {
-    setOutTransmittal(true);
-    loadDepartmentFiles();
-  };
-
-  const closeOutgoingTransmittalModal = () => {
-    setOutTransmittal(false);
-    setSelectedFiles([]);
-  };
-
-  const loadDepartmentFiles = () => {
-    const job = getCurrentJob(); // Retrieve the current job details from localStorage
-    if (job) {
-      setDepartments({
-        ENG: job.masterlist?.ENG || [],
-        QAQC: job.masterlist?.QAQC || [],
-      });
-    }
-  };
-
-  const getCurrentJob = () => {
-    const jobId = new URLSearchParams(window.location.search).get("jobId");
-    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-    return jobs.find((j) => j.jobId === jobId) || null;
-  };
-
-  const createOutgoingTransmittal = () => {
-    const newTransmittalId = `ZM-TRAN-OUTGOING-${generateTransmittalId()}`;
-    const outgoingTransmittal = {
-      id: newTransmittalId,
-      date: new Date().toLocaleString(),
-      files: selectedFiles,
+    
+    
+    const getCurrentJob = () => {
+      const jobId = new URLSearchParams(window.location.search).get("jobId");
+      const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+      return jobs.find((j) => j.jobId === jobId) || null;
     };
 
-    // Save transmittal to localStorage and state
-    saveTransmittal(outgoingTransmittal);
-    setOutgoingTransmittals((prev) => [...prev, outgoingTransmittal]);
-    closeOutgoingTransmittalModal();
-  };
-
-  const generateTransmittalId = () => {
-    return outgoingTransmittals.length + 1;
-  };
-
-  const saveTransmittal = (transmittal) => {
-    const transmittals = JSON.parse(localStorage.getItem("outgoingTransmittals")) || [];
-    transmittals.push(transmittal);
-    localStorage.setItem("outgoingTransmittals", JSON.stringify(transmittals));
-  };
-
-  const handleFileSelection = (department, fileIndex) => {
-    const selectedFile = { department, index: fileIndex };
-    setSelectedFiles((prev) =>
-      prev.find((f) => f.department === department && f.index === fileIndex)
-        ? prev.filter((f) => !(f.department === department && f.index === fileIndex))
-        : [...prev, selectedFile]
-    );
-  };
-
-  if (jobNotFound) {
-    alert('Job not found');
-    return null;
-  }
+  
 
   return (
     <MasterLayout>
@@ -1261,19 +1239,49 @@ function JobDetail() {
                   <>
                     {/* Transmittal Info */}
                     <div className="transmittal-info">
-                      <p><strong>Date:</strong> {transmittalDetails.date}</p>
-                      <p><strong>Summary/Comments:</strong> {transmittalDetails.summary}</p>
+                      <Table>
+                        <tbody>
+                            <tr>
+                              <th>Date:</th>
+                              <td>{transmittalDetails.date}</td>
+                            </tr>
+                            <tr>
+                              <th>Summary/Comments:</th>
+                              <td>{transmittalDetails.summary}</td>
+                            </tr>
+                        </tbody>
+                      </Table>
                     </div>
 
                     {/* Job Details */}
                     <div className="mt-5">
                       <h6>Job Details</h6>
                       <div className="job-details">
-                        <p><strong>Job ID:</strong> {transmittalDetails.jobDetails.jobId}</p>
-                        <p><strong>Job Name:</strong> {transmittalDetails.jobDetails.jobName}</p>
-                        <p><strong>Client:</strong> {transmittalDetails.jobDetails.client}</p>
-                        <p><strong>EPC:</strong> {transmittalDetails.jobDetails.epc}</p>
-                        <p><strong>End User:</strong> {transmittalDetails.jobDetails.endUser}</p>
+
+                        <Table>
+                          <tbody>
+                            <tr>
+                              <th>Job ID:</th>
+                              <td>{transmittalDetails.jobDetails.jobId}</td>
+                            </tr>
+                            <tr>
+                              <th>Job Name:</th>
+                              <td>{transmittalDetails.jobDetails.jobName}</td>
+                            </tr>
+                            <tr>
+                              <th>Client:</th>
+                              <td>{transmittalDetails.jobDetails.client}</td>
+                            </tr>
+                            <tr>
+                              <th>EPC:</th>
+                              <td>{transmittalDetails.jobDetails.epc}</td>
+                            </tr>
+                            <tr>
+                              <th>End User:</th>
+                              <td>{transmittalDetails.jobDetails.endUser}</td>
+                            </tr>
+                          </tbody>
+                        </Table>
                       </div>
                     </div>
 
@@ -1354,7 +1362,7 @@ function JobDetail() {
                     </label>
                   </div>
 
-                  <table className="department-table w-100" style={{ maxWidth: '100%', tableLayout: 'fixed' }}>
+                  <Table className="department-table w-100" style={{ maxWidth: '100%', tableLayout: 'fixed' }}>
                     <tbody>
                       {[
                         ["PM", "Project Management"],
@@ -1380,7 +1388,7 @@ function JobDetail() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
               </Modal.Body>
               <Modal.Footer>
@@ -1403,151 +1411,6 @@ function JobDetail() {
         </div>
       </div>
 
-      {/* Outgoing Modal  */}
-
-      <div className="card h-100 p-0 radius-12 mt-24">
-        <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between w-100" style={{ width: 100 + '%' }}>
-          <h6 className="text-lg fw-semibold mb-0">Outgoing Transmittals</h6>
-        </div>
-        <div className="card-body p-24">
-          <div className="gy-4">
-
-            {/* <Table bordered>
-              <thead>
-                <tr>
-                  <th style={{ width: '20%', textAlign :"center" }}>Transmittal ID</th>
-                  <th style={{ width: '20%', textAlign :"center" }}>Date</th>
-                  <th style={{ width: '20%', textAlign :"center" }}>Summary</th>
-                  <th style={{ width: '25%', textAlign :"center" }}>NOtified Departments</th>
-                  <th style={{ width: '15%', textAlign :"center" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="permissionsTableBody">
-                
-              </tbody>
-            </Table> */}
-
-            {outgoingTransmittals.map((t) => (
-              <div key={t.id} className="transmittal-card d-flex justify-content-around align-items-center border border-secondary my-3 py-3">
-                <p className="m-auto">
-                  <strong>ID:</strong> {t.id}
-                </p>
-                <p className="m-auto">
-                  <strong>Date:</strong> {t.date}
-                </p>
-                <p className="m-auto">
-                  <strong>Files:</strong> {t.files.length}
-                </p>
-              </div>
-            ))}
-          </div>
-          <Button
-            className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-5 py-3"
-            onClick={openOutgoingTransmittalModal}>
-            New Outgoing Transmittal
-          </Button>
-
-
-          {outTransmittal && (
-
-            <Modal
-              show={outTransmittal}
-              size="lg"
-              aria-labelledby="contained-modal-title-vcenter"
-              centered
-            >
-              <Modal.Header>
-                <Modal.Title id="contained-modal-title-vcenter">
-                  Create Outgoing Transmittal
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-
-                <div class="tab-container d-flex align-items-center gap-2">
-                  <button class="tab-button btn rounded-pill btn btn-outline-secondary text-secondary-600 radius-8 px-4 py-4" onclick="openTab(event, 'ENG')">Engineering (ENG)</button>
-                  <button class="tab-button btn rounded-pill btn btn-outline-secondary text-secondary-600 radius-8 px-6 py-4" onclick="openTab(event, 'QAQC')">QA/QC</button>
-                  {/* <!-- Add more department tabs as needed --> */}
-                </div>
-
-                <div id="ENG" class="tab-content">
-                  <p className="mt-5">Total Selected Files: <span id="ENGFileCount">0</span></p>
-                  <Table bordered id="" className="">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '20%', textAlign: "center" }}>Select</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>File Description</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>Revision</th>
-                        <th style={{ width: '25%', textAlign: "center" }}>Document No.</th>
-                      </tr>
-                    </thead>
-                    <tbody id="ENGFileList">
-                      {/* <!-- Files for ENG will populate here dynamically --> */}
-                      {departments.ENG.map((file, index) => (
-                        <tr key={index}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              onChange={() => handleFileSelection("ENG", index)}
-                            />
-                          </td>
-                          <td>{file.fileDescription}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-
-                <div id="QAQC" class="tab-content" style={{display:"none"}}>
-                  <p className="mt-5">Total Selected Files: <span id="QAQCFileCount">0</span></p>
-                  <Table bordered id="" className="">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '20%', textAlign: "center" }}>Select</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>File Description</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>Revision</th>
-                        <th style={{ width: '25%', textAlign: "center" }}>Document Attributes</th>
-                      </tr>
-                    </thead>
-                    <tbody id="QAQCFileList">
-                      {/* <!-- Files for QAQC will populate here dynamically --> */}
-
-                      {departments.QAQC.map((file, index) => (
-                        <tr key={index}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              onChange={() => handleFileSelection("QAQC", index)}
-                            />
-                          </td>
-                          <td>{file.fileDescription}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-
-                <p className="mt-5">Total Files Selected Across Departments: <span id="totalFileCount">0</span></p>
-
-              </Modal.Body>
-              <Modal.Footer>
-                <Button
-                  className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
-                  onClick={createOutgoingTransmittal}
-                >
-                  Create Transmittal
-                </Button>
-                <Button
-                  className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                  onClick={closeOutgoingTransmittalModal}
-                >
-                  Close
-                </Button>
-              </Modal.Footer>
-            </Modal>
-
-          )}
-        </div>
-      </div>
     </MasterLayout >
   )
 }
