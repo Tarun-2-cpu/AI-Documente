@@ -12,6 +12,7 @@ import Table from 'react-bootstrap/Table';
 function EnggJobDetail() {
 
   const [currentJob, setCurrentJob] = useState(null);
+  const [currentJobID, setCurrentJobID] = useState(null);
   const [transmittal, setTransmittal] = useState(null)
   const [totalJobs, setTotalJobs] = useState([]);
   const [rows, setRows] = useState([]);
@@ -26,6 +27,20 @@ function EnggJobDetail() {
   // modal view
   const [transmittalDetailModal, setTransmittalDetailModal] = useState(false);
 
+  const [masterlist, setMasterlist] = useState(null);
+  // inputs
+  const [fileDesc, setFileDesc] = useState('');
+  const [equipTag, setEquipTag] = useState('');
+  const [nmr, setNMR] = useState('');
+  const [clientCode, setClientCode] = useState('');
+  const [clientDocNo, setClientDocNo] = useState('');
+  const [zsDocNo, setZSDocNo] = useState('');
+  const [pDate, setPDate] = useState('');
+  const [owner, setOwner] = useState('');
+  const [revisionModalShow, setRevisionModalShow] = useState(false);
+  const [currentFileIndex, setCurrentFileIndex] = useState(null);
+  const [revisions, setRevisions] = useState([]);
+
   useEffect(() => {
 
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
@@ -37,35 +52,44 @@ function EnggJobDetail() {
 
     if (job) {
       setCurrentJob(job);
+      setCurrentJobID(job.id)
     } else {
       alert("Job not found.");
     }
     console.log(job.masterlistRequests)
     console.log(job);
 
-    if (currentJob?.masterlistRequests) {
+
+    if (job?.masterlistRequests) {
       const filteredRequests = job.masterlistRequests.filter((request) =>
         request.departments.includes("ENG")
       );
-      console.log(filteredRequests);
-      
       setEngRequests(filteredRequests);
     }
 
-    if (engMasterlistModal) {
-      if (currentJob && currentJob.masterlist?.ENG) {
-        setIsUpdate(true);
-        // Populate the rows with existing data
-        setRows([...currentJob.masterlist.ENG]);
-      } else {
-        setIsUpdate(false);
-        setRows([])
-      }
+    if (job?.masterlist) {
+      setMasterlist(job.masterlist)
     }
-    
+
+    console.log(engRequests);
+
+    if (currentJob && currentJob.masterlist && currentJob.masterlist.ENG) {
+      setIsUpdate(true);
+      // Populate the rows with existing data
+      setRows(currentJob.masterlist.ENG);
+    } else {
+      setIsUpdate(false);
+      setRows([])
+    }
+
   }, [])
-  
+
+
+  console.log("eng master list", engRequests);
   console.log("rows", rows);
+
+  console.log("masterlist", currentJob?.masterlist);
+  console.log("master list state", masterlist);
 
 
   function loadJobDetails() {
@@ -91,10 +115,6 @@ function EnggJobDetail() {
     setTransmittalDetailModal(true);
   }
 
-  const handleRequestClick = (request) => {
-    setSelectedRequest(request);
-    setEngMasterlistModal(true);
-  };
 
   const determineDueDateColor = (dueDate) => {
     const today = new Date();
@@ -105,6 +125,11 @@ function EnggJobDetail() {
     if (daysRemaining < 0) return "red"; // Due date has passed
     if (daysRemaining <= 7) return "#FF9900"; // Due date within the next week
     return "blue"; // Due date is more than a week away
+  };
+
+  const handleRequestClick = (currentJobID, request) => {
+    setSelectedRequest(request);
+    setEngMasterlistModal(true);
   };
 
   const addRow = () => {
@@ -136,28 +161,102 @@ function EnggJobDetail() {
 
 
   const handleSave = () => {
-    // Retrieve existing jobs from localStorage
-    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-    const jobId = localStorage.getItem("currentJobId");
-    const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
+    setEngMasterlistModal(false);
+    // Call this function to populate the masterlist when the page loads
 
-    if (jobIndex !== -1) {
-      if (!jobs[jobIndex].masterlist) jobs[jobIndex].masterlist = {};
-      jobs[jobIndex].masterlist.ENG = rows;
-      localStorage.setItem("jobs", JSON.stringify(jobs));
+    const masterlistData = {
+      fileDescription: fileDesc,
+      equipmentTag: equipTag,
+      nmrCode: nmr,
+      clientCode: clientCode,
+      clientDocumentNo: clientDocNo,
+      zsDocumentNo: zsDocNo,
+      plannedDate: pDate,
+      ownerEmail: owner,
     }
 
-  };
+    // Retrieve the existing job data
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const jobId = localStorage.getItem('currentJobId');
+    const jobIndex = jobs.findIndex(j => j.jobId === jobId);
 
+    if (jobIndex === -1) {
+      alert("Job not found!");
+      return;
+    }
+
+    // Add or update the masterlist for the Engineering department
+    const currentJob = jobs[jobIndex];
+    currentJob.masterlist = currentJob.masterlist || {};
+    currentJob.masterlist.ENG = Array.isArray(currentJob.masterlist.ENG) ? currentJob.masterlist.ENG : [];
+
+    // Append the new entry to the masterlist array
+    currentJob.masterlist.ENG.push(masterlistData);
+
+    // Update the localStorage
+    jobs[jobIndex] = currentJob;
+    localStorage.setItem('jobs', JSON.stringify(jobs));
+
+    // Close the modal
+    closeMasterlistModal();
+  };
 
   //   // Function to close the modal
   function closeMasterlistModal() {
     setEngMasterlistModal(false);
   }
 
+  function uploadFile(index) {
+    const fileEntry = currentJob.masterlist.ENG[index];
+
+    if (!fileEntry.revisions) {
+      fileEntry.revisions = [];
+    }
+
+    setRevisionModalShow(true);
+    setCurrentFileIndex(index);
+  }
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const newRevision = {
+      hash: `hash_${file.name}_${Date.now()}`, // Placeholder for hash generation
+      date: new Date().toLocaleDateString(),
+      pageCount: estimatePageCount(file), // Replace with your logic
+      size: `${(file.size / 1024).toFixed(2)} KB`,
+    };
+
+    const updatedRevisions = [...revisions, newRevision];
+    setRevisions(updatedRevisions);
+
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const jobIndex = jobs.findIndex((job) => job.jobId === currentJob.jobId);
 
 
+    if (jobIndex !== -1) {
+      const updatedJobs = [...jobs];
+      updatedJobs[jobIndex].masterlist.ENG[currentFileIndex].revisions = updatedRevisions;
+  
+      // Save the updated jobs array back to localStorage
+      localStorage.setItem('jobs', JSON.stringify(updatedJobs));
+    } else {
+      console.error('Job not found in local storage');
+    }
+  };
 
+  // Mock function to estimate page count (replace with actual logic)
+  function estimatePageCount(file) {
+    return 20; 
+  }
+
+
+  const closeModal = () => {
+    setRevisionModalShow(false);
+    setCurrentFileIndex(null);
+    setRevisions([]);
+  };
 
   //   // Function to add a new row to the masterlist table
 
@@ -222,11 +321,6 @@ function EnggJobDetail() {
   //     displayEngineeringMasterlist();
 
   //   }
-
-
-
-
-
 
 
 
@@ -474,7 +568,6 @@ function EnggJobDetail() {
                     aria-labelledby="contained-modal-title-vcenter"
                     centered
                     id="revisionModal"
-                  // onClose={() => setRevisionModalShow(false)}
                   >
                     <Modal.Header>
                       <Modal.Title id="contained-modal-title-vcenter">
@@ -640,7 +733,6 @@ function EnggJobDetail() {
                   aria-labelledby="contained-modal-title-vcenter"
                   centered
                   id="revisionModal"
-                // onClose={() => setRevisionModalShow(false)}
                 >
                   <Modal.Header>
                     <Modal.Title id="contained-modal-title-vcenter">
@@ -693,7 +785,6 @@ function EnggJobDetail() {
                   <Modal.Footer>
                     <Button
                       className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                    // onClick={() => setRevisionModalShow(false)}
                     >
                       Close
                     </Button>
@@ -702,12 +793,11 @@ function EnggJobDetail() {
 
                 {/*File Revisions*/}
                 <Modal
-                  show={false}
+                  show={revisionModalShow}
                   size="xl"
                   aria-labelledby="contained-modal-title-vcenter"
                   centered
                   id="revisionModal"
-                // onClose={() => setRevisionModalShow(false)}
                 >
                   <Modal.Header>
                     <Modal.Title id="contained-modal-title-vcenter">
@@ -728,15 +818,30 @@ function EnggJobDetail() {
                         </tr>
                       </thead>
                       <tbody id="revision-history-body">
-
+                        {revisions.map((revision, index) => (
+                          <tr key={index}>
+                            <td>{index}</td>
+                            <td>{revision.hash}</td>
+                            <td>{revision.date}</td>
+                            <td>{revision.pageCount}</td>
+                            <td>{revision.size}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </Table>
+
+                    <br />
+                    <input
+                      type="file"
+                      className="form-control"
+                      onChange={handleFileUpload}
+                    />
 
                   </Modal.Body>
                   <Modal.Footer>
                     <Button
                       className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                    // onClick={() => setRevisionModalShow(false)}
+                      onClick={() => setRevisionModalShow(false)}
                     >
                       Close
                     </Button>
@@ -761,51 +866,51 @@ function EnggJobDetail() {
               <div className="card shadow-none border w-100">
                 <div className="card-body p-20" id="masterlistRequestsList">
                   <div className="card-body p-24">
-                    
+
                     {engRequests.length === 0 ? (
                       <p>No Masterlist requests for Engineering.</p>
-                      ) : (
-                        <div className="row row-cols-1 gy-4">
-                          {engRequests.map((request, index) => (
-                            <div className="col w-100" key={index}>
-                              <div
-                                className="masterlist-request-card card shadow-none border w-100 d-flex flex-row align-items-center justify-content-between px-3"
-                                style={{
-                                  borderLeft: `5px solid ${determineDueDateColor(
-                                    request.dueDate
-                                  )}`,
-                                }}
-                              >
-                                <div className="request-details p-20">
-                                  <p>
-                                    <strong>Departments:</strong>{" "}
-                                    {request.departments.join(", ")}
-                                  </p>
-                                  <p>
-                                    <strong>Due Date:</strong>{" "}
-                                    <span
-                                      style={{
-                                        color: determineDueDateColor(request.dueDate),
-                                      }}
-                                    >
-                                      {request.dueDate}
-                                    </span>
-                                  </p>
-                                  <p>
-                                    <strong>Requested On:</strong> {request.requestedOn}
-                                  </p>
-                                </div>
-                                <Button
-                                  className="create-masterlist-btn btn btn-primary"
-                                  onClick={() =>{setEngMasterlistModal(true)}}
-                                >
-                                  Create Masterlist
-                                </Button>
+                    ) : (
+                      <div className="row row-cols-1 gy-4">
+                        {engRequests.map((request, index) => (
+                          <div className="col w-100" key={index}>
+                            <div
+                              className="masterlist-request-card card shadow-none border w-100 d-flex flex-row align-items-center justify-content-between px-3"
+                              style={{
+                                borderLeft: `5px solid ${determineDueDateColor(
+                                  request.dueDate
+                                )}`,
+                              }}
+                            >
+                              <div className="request-details p-20">
+                                <p>
+                                  <strong>Departments:</strong>{" "}
+                                  {request.departments.join(", ")}
+                                </p>
+                                <p>
+                                  <strong>Due Date:</strong>{" "}
+                                  <span
+                                    style={{
+                                      color: determineDueDateColor(request.dueDate),
+                                    }}
+                                  >
+                                    {request.dueDate}
+                                  </span>
+                                </p>
+                                <p>
+                                  <strong>Requested On:</strong> {request.requestedOn}
+                                </p>
                               </div>
+                              <Button
+                                className="create-masterlist-btn btn btn-primary"
+                                onClick={() => handleRequestClick(currentJobID, request)}
+                              >
+                                Create Masterlist
+                              </Button>
                             </div>
-                          ))}
-                        </div>
-                      )
+                          </div>
+                        ))}
+                      </div>
+                    )
                     }
                   </div>
                 </div>
@@ -813,167 +918,173 @@ function EnggJobDetail() {
                 {/*Files Details*/}
 
                 {/* {selectedRequest && ( */}
-                  <Modal
-                    show={engMasterlistModal}
-                    // jobId={selectedJobId}
-                    // srNo={selectedSrNo}
-                    size="lg"
-                    aria-labelledby="contained-modal-title-vcenter"
-                    centered
-                    id="revisionModal"
-                    style={{ display: engMasterlistModal ? "flex" : "none" }}
-                  // onClose={() => setRevisionModalShow(false)}
-                  >
-                    <Modal.Header closeButton>
-                      <Modal.Title id="contained-modal-title-vcenter">
-                        Engineering Masterlist
-                      </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                      <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
-                      {rows.map((row, index) => (
-                        <div className="modal-body" key={index}>
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="" >File Desc</label>
-                            </div>
-                            <input type="text"
-                              value={row.fileDescription}
-                              className="form-control"
-                              onChange={(e) =>
-                                updateRow(index, "fileDescription", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="" id="">Equip Tag</label>
-                              <input type="text"
-                                className="form-control"
-                                value={row.nmrCode}
-                                onChange={(e) =>
-                                  updateRow(index, "nmrCode", e.target.value)
-                                }
-                              />
-                            </div>
-                          </div>
+                <Modal
+                  show={engMasterlistModal}
+                  size="lg"
+                  aria-labelledby="contained-modal-title-vcenter"
+                  centered
+                  id="revisionModal"
+                  style={{ display: engMasterlistModal ? "flex" : "none" }}
+                // onClose={() => setRevisionModalShow(false)}
+                >
+                  <Modal.Header closeButton>
+                    <Modal.Title id="contained-modal-title-vcenter">
+                      Engineering Masterlist
+                    </Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
+                    {/* {rows.map((row, index) => ( */}
 
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="" id="">NMR Code</label>
-                            </div>
-                            <input type="text" 
-                              className="form-control"
-                              id="JobName"
-                              value={row.nmrCode}
-                              onChange={(e) =>
-                                updateRow(index, "nmrCode", e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="" id="">Client Code	</label>
-                            </div>
-                            <input type="text"
-                             className="form-control"
-                              value={row.clientCode}
-                              onChange={(e) =>
-                                updateRow(index, "clientCode", e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="" id="">Client Doc No.</label>
-                            </div>
-                            <input type="text"
-                             className="form-control"
-                              value={row.clientDocumentNo}
-                              onChange={(e) =>
-                                updateRow(index, "clientDocumentNo", e.target.value)
-                              }
-                             />
-                          </div>
-
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="">ZS Doc No.</label>
-                            </div>
-                            <div className="">
-                              <input type="text" 
-                              className="form-control" 
-                              value={row.zsDocumentNo}
-                              onChange={(e) =>
-                                updateRow(index, "zsDocumentNo", e.target.value)
-                              }
-                            />
-                            </div>
-                          </div>
-
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="" id="">Planned Date</label>
-                            </div>
-                            <input type="date" 
-                              className="form-control mb-3" 
-                              value={row.plannedDate}
-                              onChange={(e) =>
-                                updateRow(index, "plannedDate", e.target.value)
-                              } 
-                            />
-                          </div>
-
-                          <div className="mb-3">
-                            <div className="">
-                              <label className="">Owner</label>
-                            </div>
-                            <div className="">
-                              <input type="email" 
-                                className="form-control" 
-                                value={row.ownerEmail}
-                                onChange={(e) =>
-                                  updateRow(index, "ownerEmail", e.target.value)
-                                }
-                              />
-                            </div>
-                          </div>
-
-                          <div className="mb-3 ">
-                            <div className="d-flex align-items-center justify-content-end w-full">
-                              <Button className="btn rounded-pill radius-8 px-3 py-2" variant="outline-danger" onClick={() => deleteRow(index)}>Delete</Button>
-                            </div>
-                          </div>
-
-                          <Button
-                            className="btn rounded-pill radius-8 px-20 py-11"
-                            variant="outline-secondary"
-                            onClick={addRow}
-                          >
-                            Add Row
-                          </Button>
+                    <div className="modal-body" >
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="">File Desc</label>
                         </div>
-                      ))}
+                        <input type="text"
+                          value={fileDesc}
+                          className="form-control"
+                          onChange={(e) =>
+                            // updateRow(index, "fileDescription", e.target.value)
+                            setFileDesc(e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Equip Tag</label>
+                          <input type="text"
+                            className="form-control"
+                            value={equipTag}
+                            onChange={(e) =>
+                              // updateRow(index, "EquipmentTag", e.target.value)
+                              setEquipTag(e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
 
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">NMR Code</label>
+                        </div>
+                        <input type="text"
+                          className="form-control"
+                          id="JobName"
+                          value={nmr}
+                          onChange={(e) =>
+                            // updateRow(index, "nmrCode", e.target.value)
+                            setNMR(e.target.value)
+                          }
+                        />
+                      </div>
 
-                    </Modal.Body>
-                    <Modal.Footer>
-                      <Button
-                        className="btn rounded-pill btn-primary-100 text-primary-900 radius-8 px-20 py-11"
-                        onClick={handleSave}
-                      >
-                        {isUpdate ? "Update Masterlist" : "Save Masterlist"}
-                      </Button>
-                      <Button
-                        className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                        onClick={()=> setEngMasterlistModal(false)}
-                      >
-                        Close
-                      </Button>
-                    </Modal.Footer>
-                  </Modal>
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Client Code	</label>
+                        </div>
+                        <input type="text"
+                          className="form-control"
+                          value={clientCode}
+                          onChange={(e) =>
+                            // updateRow(index, "clientCode", e.target.value)
+                            setClientCode(e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Client Doc No.</label>
+                        </div>
+                        <input type="text"
+                          className="form-control"
+                          value={clientDocNo}
+                          onChange={(e) =>
+                            // updateRow(index, "clientDocumentNo", e.target.value)
+                            setClientDocNo(e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="">ZS Doc No.</label>
+                        </div>
+                        <div className="">
+                          <input type="text"
+                            className="form-control"
+                            value={zsDocNo}
+                            onChange={(e) =>
+                              // updateRow(index, "zsDocumentNo", e.target.value)
+                              setZSDocNo(e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="" id="">Planned Date</label>
+                        </div>
+                        <input type="date"
+                          className="form-control mb-3"
+                          value={pDate}
+                          onChange={(e) =>
+                            // updateRow(index, "plannedDate", e.target.value)
+                            setPDate(e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="">
+                          <label className="">Owner</label>
+                        </div>
+                        <div className="">
+                          <input type="email"
+                            className="form-control"
+                            value={owner}
+                            onChange={(e) =>
+                              // updateRow(index, "ownerEmail", e.target.value)
+                              setOwner(e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mb-3 ">
+                        <div className="d-flex align-items-center justify-content-end w-full">
+                          <Button className="btn rounded-pill radius-8 px-3 py-2" variant="outline-danger" onClick={() => deleteRow()}>Delete</Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ))} */}
+                    <Button
+                      className="btn rounded-pill radius-8 px-20 py-11"
+                      variant="outline-secondary"
+                      onClick={addRow}
+                    >
+                      Add Row
+                    </Button>
+
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button
+                      className="btn rounded-pill btn-primary-100 text-primary-900 radius-8 px-20 py-11"
+                      onClick={handleSave}
+                    >
+                      {isUpdate ? "Update Masterlist" : "Save Masterlist"}
+                    </Button>
+                    <Button
+                      className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                      onClick={() => setEngMasterlistModal(false)}
+                    >
+                      Close
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
                 {/* )} */}
 
               </div>
@@ -1007,11 +1118,31 @@ function EnggJobDetail() {
                         <th>Upload</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-
-                      </tr>
-                    </tbody>
+                    {
+                      masterlist?.ENG?.length > 0 ? (
+                        <tbody>
+                          {masterlist.ENG.map((file, index) => (
+                            <tr key={index}>
+                              <td>{file.fileDescription}</td>
+                              <td>{file.equipmentTag}</td>
+                              <td>{file.nmrCode}</td>
+                              <td>{file.clientCode || "N/A"}</td>
+                              <td>{file.clientDocumentNo || "N/A"}</td>
+                              <td>{file.zsDocumentNo || "N/A"}</td>
+                              <td>{file.plannedDate || "N/A"}</td>
+                              <td>{file.ownerEmail || "N/A"}</td>
+                              <td>
+                                <button className="upload-btn" onClick={() => uploadFile(index)}>
+                                  Upload
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      ) : (
+                        <p className="text-center">No masterlist entries available.</p>
+                      )
+                    }
                   </Table>
                 </div>
               </div>
@@ -1019,9 +1150,6 @@ function EnggJobDetail() {
           </div>
         </div>
       </div>
-
-
-
     </MasterLayout >
   )
 }

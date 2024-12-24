@@ -17,21 +17,37 @@ function EnggDashboard() {
 
   useEffect(() => {
     const storedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    setJobs(storedJobs);
+    
+    // Ensure storedJobs is an array
+    const jobsArray = Array.isArray(storedJobs) ? storedJobs : [];
+    setJobs(jobsArray);
 
-    setTotalJobs(storedJobs.length);
+    setTotalJobs(jobsArray.length);
 
-    const calculateTransmittalsShared = storedJobs.reduce((count, job) => count + (job.transmittals ? job.transmittals.length : 0), 0);
-    setTransmittalsShared(calculateTransmittalsShared)
+    // Transmittals Shared
+  const calculateTransmittalsShared = jobsArray.reduce((count, job) => {
+    return count + (Array.isArray(job.transmittals) ? job.transmittals.length : 0);
+  }, 0);
+  setTransmittalsShared(calculateTransmittalsShared);
 
-    const calculatePendingActions = storedJobs.reduce((count, job) => count + (job.pendingActions || 0), 0);
-    setPendingActions(calculatePendingActions)
+  // Pending Actions
+  const calculatePendingActions = jobsArray.reduce((count, job) => {
+    return count + (job.pendingActions || 0);
+  }, 0);
+  setPendingActions(calculatePendingActions);
 
-    const calculateDueDates = storedJobs.reduce((count, job) => count + (job.dueDates || 0), 0);
+  // Due Dates
+  const calculateDueDates = jobsArray.reduce((count, job) => {
+    return count + (job.dueDates || 0);
+  }, 0);
+    
+    
     setDueDates(calculateDueDates)
 
 
   }, [])
+
+    console.log(jobs)
 
   function redirect(job){
     localStorage.setItem('currentJobId', job.jobId);

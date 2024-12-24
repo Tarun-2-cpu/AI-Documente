@@ -21,7 +21,10 @@ function BDDashboard() {
 
   useEffect(() => {
     const storedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    setJobs(storedJobs);
+    
+    const jobsArray = Array.isArray(storedJobs) ? storedJobs : [];
+
+    setJobs(jobsArray);
   }, [])
 
 
@@ -261,28 +264,33 @@ function BDDashboard() {
           <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4">
 
             {
-              jobs.map((job, index) => (
-                <div className="col" key={index} onClick={() => handleJobClick(job.jobId)}>
-                  <div className="card shadow-none border bg-gradient-end-3">
-                    <div className="card-body p-20">
-                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div className="flex-grow-1">
-                          <h6 className="mb-2 text-xl">Job name : {job.jobName}</h6>
-                          <p className="mb-0">{job.jobId}</p>
+              Array.isArray(jobs) && jobs.length > 0 ? (
+                
+                jobs.map((job, index) => (
+                  <div className="col" key={index} onClick={() => handleJobClick(job.jobId)}>
+                    <div className="card shadow-none border bg-gradient-end-3">
+                      <div className="card-body p-20">
+                        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                          <div className="flex-grow-1">
+                            <h6 className="mb-2 text-xl">Job name : {job.jobName}</h6>
+                            <p className="mb-0">{job.jobId}</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="mt-3 d-flex flex-wrap justify-content-between align-items-center gap-1">
-                        <div className="">
-                          <h6 className="mb-8 text-lg">PO Number: {job.poNumber}</h6>
-                          <h6 className="mb-8 text-sm fw-medium text-secondary-light">PO Date: {job.poDate}</h6>
-                          <span className="text-success-main text-md">Status: Job Created</span>
+                        <div className="mt-3 d-flex flex-wrap justify-content-between align-items-center gap-1">
+                          <div className="">
+                            <h6 className="mb-8 text-lg">PO Number: {job.poNumber}</h6>
+                            <h6 className="mb-8 text-sm fw-medium text-secondary-light">PO Date: {job.poDate}</h6>
+                            <span className="text-success-main text-md">Status: Job Created</span>
+                          </div>
+                          
                         </div>
-                        
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))
+              ) : (
+                <p>no jobs found</p>
+              )
 
             }
           </div>

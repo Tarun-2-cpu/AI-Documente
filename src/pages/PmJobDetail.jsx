@@ -17,15 +17,31 @@ function PmJobDetail() {
   const [date, setDate] = useState('');
   const [transmittal, setTransmittal] = useState(null);
   const [transmittalModal, setTransmittalModal] = useState(false);
+  const [revisionIndex, setRevisionIndex] = useState('')
   const [outgoingTransmittals, setOutgoingTransmittals] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
+
+  const [masterListRows, setMasterListRows] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [fileDescription, setFileDescription] = useState("");
+  const [revisions, setRevisions] = useState([]);
+  const [selectedRevision, setSelectedRevision] = useState("");
+  const [file, setFile] = useState('')
+  const [commentCode, setCommentCode] = useState('');
+  const [actionDate, setActionDate] = useState('');
+  const [additionalComment, setAdditionalComment] = useState('');
+
+
+
   const [departments, setDepartments] = useState({
     ENG: [],
     QAQC: [],
   });
 
+
   const [transmittalDetailModal, setTransmittalDetailModal] = useState(false);
   const [outgoingTransmittal, setOutgoingTransmittal] = useState(null);
+
 
 
   useEffect(() => {
@@ -44,7 +60,21 @@ function PmJobDetail() {
     } else {
       alert("Job not found.");
     }
-  }, []);
+
+    loadMasterListTable();
+
+    if (currentJob && fileDescription) {
+      const file = Object.values(currentJob.masterlist).flatMap(files =>
+        files.find(f => f.fileDescription === fileDescription)
+      );
+
+      if (file && file.revisions) {
+        setRevisions(file.revisions);
+        setRevisionIndex(file.revisions.length - 1); // Default to latest revision
+      }
+    }
+
+  }, [fileDescription]);
 
   const handleCheckboxChange = (value) => {
     setSelectedDepartments((prev) =>
@@ -54,8 +84,140 @@ function PmJobDetail() {
     );
   };
 
-  const request = () => {
 
+  const loadMasterListTable = () => {
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const currentJobId = localStorage.getItem("currentJobId");
+    const currentJob = jobs.find((job) => job.jobId === currentJobId);
+    const outgoingTransmittals =
+      JSON.parse(localStorage.getItem("outgoingTransmittals")) || [];
+
+    if (currentJob && currentJob.masterlist) {
+      let serialNo = 1;
+      let rows = [];
+
+      // Iterate through each department in the masterlist
+      for (const [department, files] of Object.entries(currentJob.masterlist)) {
+        files.forEach((file) => {
+          const lastRevisionIndex = file.revisions?.length
+            ? file.revisions.length - 1
+            : null; // Check if revisions exist
+
+          const latestRevision = lastRevisionIndex !== null
+            ? file.revisions[lastRevisionIndex]
+            : null;
+
+          let date;
+
+          if (latestRevision) {
+            date = latestRevision.date
+          }
+
+          // Check if latest revision is already shared in any outgoing transmittal
+          const isShared = outgoingTransmittals.some((transmittal) =>
+            transmittal.files.some(
+              (transFile) =>
+                transFile.description === file.fileDescription &&
+                transFile.revision === lastRevisionIndex
+            )
+          );
+
+          // Determine status based on client feedback in incomingRevisions
+          let status = isShared ? "Shared" : "New";
+
+          // Check for client feedback in incomingRevisions
+          if (file.incomingRevisions && file.incomingRevisions[lastRevisionIndex]) {
+            const lastIncoming = file.incomingRevisions[lastRevisionIndex];
+            const commentCode =
+              lastIncoming[lastIncoming.length - 1]?.commentCode;
+
+            // Set status based on the comment code
+            if (["F", "I", "R"].includes(commentCode)) {
+              status = "Approved";
+            } else if (["A", "B", "C", "V"].includes(commentCode)) {
+              status = "Returned";
+            }
+          }
+
+          // Add a row for each file with the latest revision details
+          rows.push({
+            serialNo: serialNo++,
+            department,
+            fileDescription: file.fileDescription,
+            revision: `Rev ${lastRevisionIndex}`,
+            lastUpdated: date,
+            status,
+          });
+        });
+      }
+
+      // Sort rows by department and then by status
+      rows.sort((a, b) => {
+        if (a.department === b.department) {
+          return a.status.localeCompare(b.status);
+        }
+        return a.department.localeCompare(b.department);
+      });
+
+      setMasterListRows(rows);
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "New":
+        return "status-new";
+      case "Shared":
+        return "status-shared";
+      case "Approved":
+        return "status-approved";
+      case "Returned":
+        return "status-returned";
+      default:
+        return "status-default";
+    }
+  };
+
+  const openIncomingModal = (fileDesc) => {
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const currentJobId = localStorage.getItem("currentJobId");
+    const currentJob = jobs.find((job) => job.jobId === currentJobId);
+
+    if (!currentJob || !currentJob.masterlist) return;
+
+    let file = null;
+    let latestRevisionIndex = 0;
+
+    for (const files of Object.values(currentJob.masterlist)) {
+      file = files.find((f) => f.fileDescription === fileDesc);
+      if (file) {
+        latestRevisionIndex = file.revisions?.length
+          ? file.revisions.length - 1
+          : 0;
+        break;
+      }
+    }
+
+    if (file) {
+      setFileDescription(fileDesc);
+      setRevisions(file.revisions || []);
+      setSelectedRevision(latestRevisionIndex.toString());
+      setShowModal(true); // Show the modal
+    }
+  };
+
+  const handleRevisionChange = (e) => {
+    setSelectedRevision(e.target.value);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setFileDescription("");
+    setRevisions([]);
+    setSelectedRevision("");
+  };
+
+  const request = () => {
 
     if (!Array.isArray(selectedDepartments) || selectedDepartments.length === 0 || !date) {
       alert("Please select at least one department and provide a due date.");
@@ -108,6 +270,43 @@ function PmJobDetail() {
         QAQC: currentJob.masterlist?.QAQC || [],
       });
     }
+  }
+
+
+  function submitIncomingFile() {
+    if (!file) {
+      alert('Please upload a file.');
+      return;
+    }
+
+    const fileDetails = {
+      name: file.name,
+      size: (file.size / 1024).toFixed(2) + ' KB',
+      date: new Date().toLocaleDateString(),
+      hash: `hash_${file.name}_${Date.now()}`,
+      commentCode,
+      actionDate,
+      additionalComment,
+    };
+
+    const updatedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const currentJobId = localStorage.getItem('currentJobId');
+    const job = updatedJobs.find(job => job.jobId === currentJobId);
+
+    if (job) {
+      for (const files of Object.values(job.masterlist)) {
+        const targetFile = files.find(f => f.fileDescription === fileDescription);
+        if (targetFile) {
+          if (!targetFile.incomingRevisions) targetFile.incomingRevisions = [];
+          targetFile.incomingRevisions[revisionIndex] = targetFile.incomingRevisions[revisionIndex] || [];
+          targetFile.incomingRevisions[revisionIndex].push(fileDetails);
+          break;
+        }
+      }
+      localStorage.setItem('jobs', JSON.stringify(updatedJobs));
+    }
+
+    closeModal();
   }
 
   // Function to update file counts across departments
@@ -204,8 +403,6 @@ function PmJobDetail() {
 
   }
 
-
-
   // Helper to gather selected files
   function getSelectedFiles() {
     const files = [];
@@ -246,8 +443,6 @@ function PmJobDetail() {
         : [...prev, selectedFile]
     );
   };
-
-
 
   function viewTransmittalDetails(date) {
 
@@ -625,12 +820,139 @@ function PmJobDetail() {
               </thead>
               <tbody id="fileMasterListBody">
 
+                {masterListRows.length > 0 ? (
+                  masterListRows.map((row, index) => (
+                    <tr key={index} className={getStatusClass(row.status)}>
+                      <td>{row.serialNo}</td>
+                      <td>{row.department}</td>
+                      <td>{row.fileDescription}</td>
+                      <td>{row.revision}</td>
+                      <td>{row.lastUpdated}</td>
+                      <td>{row.status}</td>
+                      <td>
+                        <button
+                          className="action-btn"
+                          onClick={() => openIncomingModal(row.fileDescription)}
+                        >
+                          Incoming File
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center">
+                      No data available.
+                    </td>
+                  </tr>
+                )}
 
               </tbody>
             </Table>
           </div>
+          <Modal
+            show={showModal}
+            size="lg"
+            aria-labelledby="contained-modal-title-vcenter"
+            centered
+          >
+            <Modal.Header>
+              <Modal.Title id="contained-modal-title-vcenter">
+                Incoming File Details
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">Revision:</label>
+                </div>
+                <select type="text"
+                  className="form-control"
+                  value={revisionIndex}
+                  onChange={(e) => setRevisionIndex(e.target.value)}
+                >
+                  {revisions.map((_, index) => (
+                    <option key={index} value={index}>
+                      Rev {index}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">Comment Code:</label>
+                </div>
+                <select type="text"
+                  className="form-control"
+                  value={commentCode}
+                  onChange={(e) => setCommentCode(e.target.value)}
+                >
+                  <option>A-Rejected</option>
+                  <option>B-Comment as Noted</option>
+                  <option>C-Reviewed as Comments</option>
+                  <option>F-Reviewed without Comments</option>
+                  <option>I-For Information</option>
+                  <option>R-Reviewed as built</option>
+                  <option>V-Void</option>
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">Action Date:</label>
+                </div>
+                <input type="date"
+                 className="form-control mb-3" 
+                 value={actionDate}
+                 onChange={(e) => setActionDate(e.target.value)}
+                 />
+              </div>
+
+              <div className="mb-3">
+                <div className="">
+                  <label className="" id="">Additional Comment:</label>
+                </div>
+                <textarea className="form-control" 
+                  id="description" 
+                  value={additionalComment}
+                  onChange={(e) => setAdditionalComment(e.target.value)} 
+                  aria-label="With textarea" placeholder="Job Description"></textarea>
+              </div>
+
+              <div className="mb-3">
+                <div className="">
+                  <label className="">Upload Recieved File</label>
+                </div>
+                <div className="">
+                  <input type="file" className=
+                  "form-control" 
+                  value={file} 
+                  onChange={(e) => setFile(e.target.files[0])} 
+                  id="inputGroupFile01" />
+                </div>
+              </div>
+
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
+                onClick={()=>submitIncomingFile()}
+              >
+                Submit
+              </Button>
+              <Button
+                className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                onClick={closeModal}
+              >
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </div>
       </div>
+
 
       {/* Outgoing Modal  */}
 

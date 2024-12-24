@@ -161,7 +161,7 @@ function JobDetail() {
 
     
 
-    let newDocs = [...(job.incomingDocs || [])];
+    let newDocs = [...job.incomingDocs || []];
 
     console.log("new docs", newDocs); 
     console.log('State updated with incomingDocs:', newDocs);
@@ -539,6 +539,8 @@ function JobDetail() {
     );
   };
 
+  // work here
+
   //handle create transmittal
   const createTransmittal = () => {
     if (!files.some((file) => file.selected)) {
@@ -667,7 +669,9 @@ function JobDetail() {
     setTransmittalDetailModal(true);
   }
 
-  console.log(transmittalDetails);
+  if(transmittalDetails){
+    console.log(transmittalDetails);
+  }
 
   // open notify modal
   function openNotifyModal(id) {
