@@ -85,7 +85,6 @@ function JobDetail() {
       setPONumber(job.poNumber);
       setPoDate(job.poDate);
       setTransmittals(job.transmittals || []);
-      setIncomingDocs(job.incomingDocs || []);
 
       // if (job && job.incomingDocs) {
       //   job.incomingDocs.forEach(doc => renderDocumentRow(doc, job.jobId));
@@ -112,30 +111,32 @@ function JobDetail() {
 
 
   // Update modal data when revision modal is shown.
-  // useEffect(() => {
-  //   if (revisionModalShow && job && selectedSrNo) {
+  useEffect(() => {
+    if (revisionModalShow && job && selectedSrNo) {
+
+      console.log(job);
+      console.log(selectedSrNo);
       
-  //     if (currentJob) {
-  //       const file = currentJob.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
-  //       if (file) {
-  //         setModalData({
-  //           fileName: file.fileName,
-  //           revisions: file.revisions || [],
-  //         });
-
-  //       } else {
-  //         alert('No file found for the given SR number.');
-  //       }
-  //     } else {
-  //       alert('No job data found.');
-  //     }
-  //   }
-  // }, [revisionModalShow, job, selectedSrNo]);
-
+      if (currentJob) {
+        const file = currentJob.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
+        if (file) {
+          setModalData({
+            fileName: file.fileName,
+            revisions: file.revisions || [],
+          });
+        } else {
+          console.log('No file found for the given SR number.');
+        }
+      } else {
+        console.log('No job data found.');
+      }
+    }
+  }, [revisionModalShow, job, selectedSrNo]);
 
 
 
-  // Handle file upload
+
+  // Handle file upload (the file I upload here gets deleted when I create transmittal check the potential issues)
   
   const handleFileUpload = (event) => {
     console.log("File upload event triggered:", event.target.files);
@@ -415,7 +416,6 @@ function JobDetail() {
     }
   };
 
-  //work here
   // Upload a new revision.
   const uploadNewRevision = async () => {
     console.log("Selected job ID:", selectedJobId);
@@ -548,6 +548,7 @@ function JobDetail() {
       return;
     }
 
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     const job = jobs.find((j) => j.jobId === jobID);
 
     if (!job) {
@@ -573,34 +574,28 @@ function JobDetail() {
       notifiedDepartments: [],
     };
 
-    // Update the job's transmittals
-    if (!job.transmittals) {
-      job.transmittals = [];
-    }
-    job.transmittals.push(newTransmittal);
-
-    // Update revisions with transmittal ID
+    const updatedIncomingDocs = [...(job.incomingDocs || [])];
     selectedFiles.forEach((selected) => {
-      const doc = job.incomingDocs.find((d) => d.srNo === selected.srNo);
+      const doc = updatedIncomingDocs.find((d) => d.srNo === selected.srNo);
       const revision = doc?.revisions.find((rev) => rev.revision === selected.revision);
       if (revision) {
         revision.transmittalID = transmittalID;
       }
     });
-
-    // Save updated jobs to localStorage
-    const updatedJobs = jobs.map((j) => (j.jobId === jobID ? job : j));
-    localStorage.setItem('jobs', JSON.stringify(updatedJobs));
+  
+    const updatedJobs = jobs.map((j) =>
+      j.jobId === jobID
+        ? { ...j, transmittals: [...(j.transmittals || []), newTransmittal], incomingDocs: updatedIncomingDocs }
+        : j
+    );
+  
+    localStorage.setItem("jobs", JSON.stringify(updatedJobs));
     setJobs(updatedJobs);
-
-    // Update transmittals state for rendering
-    setTransmittals([...job.transmittals]);
-
-    // Reset modal state and close
-    setSummary('');
+    setTransmittals([...job.transmittals, newTransmittal]);
+  
+    setSummary("");
     setFiles([]);
     setCreateNewTransmittal(false);
-    refreshTransmittalsTable(job)
   };
 
   const refreshTransmittalsTable = (job) => {
@@ -768,31 +763,33 @@ function JobDetail() {
                     <div>
                       <pre>
                         <table>
-                          <tr>
-                            <th><h6>Job ID </h6></th>
-                            <td></td>
-                            <td><h6>: {jobID}</h6></td>
-                          </tr>
-                          <tr>
-                            <th><h6>Job Name </h6></th>
-                            <td></td>
-                            <td><h6>: {jobName}</h6></td>
-                          </tr>
-                          <tr>
-                            <th><h6>Description </h6></th>
-                            <td></td>
-                            <td><h6>: {description}</h6></td>
-                          </tr>
-                          <tr>
-                            <th><h6>PO Number </h6></th>
-                            <td></td>
-                            <td><h6>: {poNumber}</h6></td>
-                          </tr>
-                          <tr>
-                            <th><h6>PO Date </h6></th>
-                            <td></td>
-                            <td><h6>: {poDate}</h6></td>
-                          </tr>
+                          <tbody>
+                            <tr>
+                              <th><h6>Job ID </h6></th>
+                              <td></td>
+                              <td><h6>: {jobID}</h6></td>
+                            </tr>
+                            <tr>
+                              <th><h6>Job Name </h6></th>
+                              <td></td>
+                              <td><h6>: {jobName}</h6></td>
+                            </tr>
+                            <tr>
+                              <th><h6>Description </h6></th>
+                              <td></td>
+                              <td><h6>: {description}</h6></td>
+                            </tr>
+                            <tr>
+                              <th><h6>PO Number </h6></th>
+                              <td></td>
+                              <td><h6>: {poNumber}</h6></td>
+                            </tr>
+                            <tr>
+                              <th><h6>PO Date </h6></th>
+                              <td></td>
+                              <td><h6>: {poDate}</h6></td>
+                            </tr>
+                          </tbody>
                         </table>
                       </pre>
                     </div>
@@ -928,19 +925,19 @@ function JobDetail() {
             <Table bordered id="revision-history-table">
               <thead>
                 <tr>
-                  <th style={{ width: "25%" }}>Revision</th>
-                  <th style={{ width: "25%" }}>Hash</th>
-                  <th style={{ width: "25%" }}>Actions</th>
-                  <th style={{ width: "25%" }}>Transmittal ID</th>
+                  <th style={{ width: "25%" , textAlign : "center" }}>Revision</th>
+                  <th style={{ width: "25%" , textAlign : "center" }}>Hash</th>
+                  <th style={{ width: "25%" , textAlign : "center" }}>Actions</th>
+                  <th style={{ width: "25%" , textAlign : "center" }}>Transmittal ID</th>
                 </tr>
               </thead>
               <tbody id="revision-history-body">
                 {Array.isArray(modalData.revisions) && modalData.revisions.length > 0 ? (
                   modalData.revisions.map((revision, index) => (
                     <tr key={index}>
-                      <td>{revision.revision}</td> {/* Display revision count from the object */}
-                      <td>{typeof revision.hash === "string" ? revision.hash : "Invalid Hash"}</td>
-                      <td>
+                      <td className="text-center">{revision.revision}</td> {/* Display revision count from the object */}
+                      <td className="text-center">{typeof revision.hash === "string" ? revision.hash : "Invalid Hash"}</td>
+                      <td className="text-center">
                         {typeof revision.fileLink === "string" ? (
                           <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer">
                             View
@@ -949,7 +946,7 @@ function JobDetail() {
                           "No File Link"
                         )}
                       </td>
-                      <td>{typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
+                      <td className="text-center">{typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
                     </tr>
                   ))
                 ) : (
@@ -1376,9 +1373,9 @@ function JobDetail() {
                         ["MP", "Material Planning"],
                         ["MFG", "Manufacturing"],
                       ].map(([value, label], index) => (
-                        <tr key={index}>
+                        <tr key={index} style={{width: "45%" , margin:"10px"}}>
                           <td colSpan={2}>
-                            <label className="d-flex align-items-center">
+                            <label className="d-flex align-items-center justify-content-between mx-3 gap-2">
                               <input
                                 type="checkbox"
                                 className="department-checkbox form-check-input me-2"
@@ -1420,6 +1417,35 @@ function JobDetail() {
 }
 
 export default JobDetail
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

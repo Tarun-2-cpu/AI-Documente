@@ -5,6 +5,9 @@ import { Icon } from '@iconify/react/dist/iconify.js'
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
+import Swal from 'sweetalert2';
+import Form from 'react-bootstrap/Form';
+
 
 function PmJobDetail() {
 
@@ -42,6 +45,11 @@ function PmJobDetail() {
   const [transmittalDetailModal, setTransmittalDetailModal] = useState(false);
   const [outgoingTransmittal, setOutgoingTransmittal] = useState(null);
 
+  const [outgoingTransmittalList, setOutgoingTransmittalList] = useState([]);
+
+  // outgoing
+  const [activeTab, setActiveTab] = useState("ENG");
+
 
 
   useEffect(() => {
@@ -57,11 +65,16 @@ function PmJobDetail() {
 
     if (job) {
       setCurrentJob(job);
+      setDepartments({
+        ENG: job.masterlist?.ENG || [],
+        QAQC: job.masterlist?.QAQC || [],
+      });
     } else {
       alert("Job not found.");
     }
 
     loadMasterListTable();
+
 
     if (currentJob && fileDescription) {
       const file = Object.values(currentJob.masterlist).flatMap(files =>
@@ -74,7 +87,7 @@ function PmJobDetail() {
       }
     }
 
-  }, [fileDescription]);
+  }, [fileDescription,outgoingTransmittalList]);
 
   const handleCheckboxChange = (value) => {
     setSelectedDepartments((prev) =>
@@ -217,6 +230,7 @@ function PmJobDetail() {
     setSelectedRevision("");
   };
 
+
   const request = () => {
 
     if (!Array.isArray(selectedDepartments) || selectedDepartments.length === 0 || !date) {
@@ -238,7 +252,7 @@ function PmJobDetail() {
 
     currentJob.masterlistRequests.push(masterlistRequest);
     localStorage.setItem("jobs", JSON.stringify(totalJobs));
-    alert("Masterlist request saved successfully.");
+    Swal.fire('Sent', 'Masterlist request saved successfully.', 'success');
     setMasterList(false);
     setSelectedDepartments([]);
     setDate("");
@@ -249,18 +263,19 @@ function PmJobDetail() {
   const toggleSelectAllFiles = (e) => {
     const isChecked = e.target.checked;
     setSelectAll(isChecked);
+
+    setSelectedFiles((prev) => {
+      const updated = {};
+      Object.keys(departments).forEach((department) => {
+        updated[department] = {};
+        departments[department].forEach((_, index) => {
+          updated[department][index] = isChecked; // Select/deselect all files
+        });
+      });
+      return updated;
+    });
   };
 
-  // outgoing modal
-  const openOutgoingTransmittalModal = () => {
-    setOutTransmittal(true);
-    loadDepartmentFiles();
-  };
-
-  const closeOutgoingTransmittalModal = () => {
-    setOutTransmittal(false);
-    setSelectedFiles([]);
-  };
 
   // Load files from each department's masterlist
   function loadDepartmentFiles() {
@@ -321,22 +336,9 @@ function PmJobDetail() {
   //   document.getElementById("totalFileCount").innerText = totalCount;
   // }
 
-  function createOutgoingTransmittal() {
-    const newTransmittalId = `ZM-TRAN-OUTGOING-${generateTransmittalId()}`;
-    const selectedFiles = getSelectedFiles();
-
-    const outgoingTransmittal = {
-      id: newTransmittalId,
-      date: new Date().toLocaleString(),
-      files: selectedFiles,
-    };
-
-    saveTransmittal(outgoingTransmittal);
-    setOutgoingTransmittals((prev) => [...prev, outgoingTransmittal]);
-    // refreshOutgoingTransmittalList();
-  }
 
   // Open the transmittal detail modal and populate with data
+  // outgoing transmittal card click
   function openTransmittalDetailModal(transmittalId) {
     const transmittals =
       JSON.parse(localStorage.getItem("outgoingTransmittals")) || [];
@@ -435,15 +437,6 @@ function PmJobDetail() {
     localStorage.setItem("outgoingTransmittals", JSON.stringify(transmittals));
   }
 
-  const handleFileSelection = (department, fileIndex) => {
-    const selectedFile = { department, index: fileIndex };
-    setSelectedFiles((prev) =>
-      prev.find((f) => f.department === department && f.index === fileIndex)
-        ? prev.filter((f) => !(f.department === department && f.index === fileIndex))
-        : [...prev, selectedFile]
-    );
-  };
-
   function viewTransmittalDetails(date) {
 
 
@@ -464,6 +457,57 @@ function PmJobDetail() {
 
     setTransmittalModal(true);
   }
+
+
+  // outgoing modal
+
+  const handleFileSelection = (department, index) => {
+    setSelectedFiles((prev) => {
+      const updated = { ...prev };
+      if (!updated[department]) updated[department] = {};
+      updated[department][index] = !updated[department][index];
+
+      // Update "Select All" state
+      const allSelected = Object.keys(departments).every((dept) =>
+        departments[dept].every((_, idx) => updated[dept]?.[idx])
+      );
+      setSelectAll(allSelected);
+
+      return updated;
+    });
+  };
+
+  const openOutgoingTransmittalModal = () => setOutTransmittal(true);
+  const closeOutgoingTransmittalModal = () => setOutTransmittal(false);
+
+
+  const createOutgoingTransmittal = () => {
+    const newTransmittalId = `ZM-TRAN-OUTGOING-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    const files = Object.entries(selectedFiles).flatMap(([department, files]) =>
+      Object.entries(files)
+        .filter(([_, isSelected]) => isSelected)
+        .map(([index]) => ({
+          ...departments[department][index],
+          department,
+        }))
+    );
+
+    const newTransmittal = {
+      id: newTransmittalId,
+      date: new Date().toLocaleString(),
+      files,
+    };
+
+    // Save new transmittal (assuming a saveTransmittal function exists)
+    saveTransmittal(newTransmittal);
+    setOutgoingTransmittal(newTransmittal);
+    closeOutgoingTransmittalModal();
+    setOutgoingTransmittalList([...outgoingTransmittalList , newTransmittal ])
+  };
+
+
+  console.log(outgoingTransmittal);
 
 
   return (
@@ -552,7 +596,7 @@ function PmJobDetail() {
                 <Modal.Body>
                   <div className="notify-department-selection px-32">
                     <table className="department-table w-100" style={{ maxWidth: '100%', tableLayout: 'fixed' }}>
-                      <tbody>
+                      <tbody className="d-flex align-items-center justify-content-between flex-wrap">
                         {[
                           ["PM", "Project Management"],
                           ["ENG", "Engineering"],
@@ -561,12 +605,12 @@ function PmJobDetail() {
                           ["MP", "Material Planning"],
                           ["MFG", "Manufacturing"],
                         ].map(([value, label], index) => (
-                          <tr key={index}>
+                          <tr key={index} style={{ width: "45%", margin: "10px" }}>
                             <td colSpan={2}>
-                              <label className="d-flex align-items-center">
+                              <label className="d-flex align-items-center  justify-content-between mx-3 gap-2">
                                 <input
                                   type="checkbox"
-                                  className="department-checkbox form-check-input me-2"
+                                  className="department-checkbox form-check-input me-2 "
                                   value={value}
                                   id="confirmMasterlistBtn"
                                   onChange={(e) => handleCheckboxChange(value)}
@@ -579,9 +623,9 @@ function PmJobDetail() {
                       </tbody>
                     </table>
 
-                    <div className="mb-3">
+                    <div className="mb-3 mt-5">
                       <div className="">
-                        <label className="" id="">PO Date</label>
+                        <label className="" id="">Due Date</label>
                       </div>
                       <input type="date" className="form-control mb-3" value={date} onChange={(e) => setDate(e.target.value)} />
                     </div>
@@ -809,13 +853,13 @@ function PmJobDetail() {
             <Table bordered >
               <thead>
                 <tr>
-                  <th style={{ width: '15%', textAlign: "center" }}>Serial.NO.</th>
+                  <th style={{ width: '10%', textAlign: "center" }}>Serial.NO.</th>
                   <th style={{ width: '15%', textAlign: "center" }}>Department</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>Description</th>
-                  <th style={{ width: '15%', textAlign: "center" }}>Current Revision</th>
+                  <th style={{ width: '14%', textAlign: "center" }}>Description</th>
+                  <th style={{ width: '12%', textAlign: "center" }}>Current Revision</th>
                   <th style={{ width: '15%', textAlign: "center" }}>Last Updated</th>
                   <th style={{ width: '10%', textAlign: "center" }}>Status</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>Action</th>
+                  <th style={{ width: '14%', textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody id="fileMasterListBody">
@@ -823,19 +867,20 @@ function PmJobDetail() {
                 {masterListRows.length > 0 ? (
                   masterListRows.map((row, index) => (
                     <tr key={index} className={getStatusClass(row.status)}>
-                      <td>{row.serialNo}</td>
-                      <td>{row.department}</td>
-                      <td>{row.fileDescription}</td>
-                      <td>{row.revision}</td>
-                      <td>{row.lastUpdated}</td>
-                      <td>{row.status}</td>
-                      <td>
-                        <button
+                      <td className="text-center" >{row.serialNo}</td>
+                      <td className="text-center" >{row.department}</td>
+                      <td className="text-center" >{row.fileDescription}</td>
+                      <td className="text-center" >{row.revision}</td>
+                      <td className="text-center" >{row.lastUpdated}</td>
+                      <td className="text-center" >{row.status}</td>
+                      <td className="text-center" >
+                        <Button
                           className="action-btn"
+                          variant="outline-secondary"
                           onClick={() => openIncomingModal(row.fileDescription)}
                         >
                           Incoming File
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -904,20 +949,20 @@ function PmJobDetail() {
                   <label className="" id="">Action Date:</label>
                 </div>
                 <input type="date"
-                 className="form-control mb-3" 
-                 value={actionDate}
-                 onChange={(e) => setActionDate(e.target.value)}
-                 />
+                  className="form-control mb-3"
+                  value={actionDate}
+                  onChange={(e) => setActionDate(e.target.value)}
+                />
               </div>
 
               <div className="mb-3">
                 <div className="">
                   <label className="" id="">Additional Comment:</label>
                 </div>
-                <textarea className="form-control" 
-                  id="description" 
+                <textarea className="form-control"
+                  id="description"
                   value={additionalComment}
-                  onChange={(e) => setAdditionalComment(e.target.value)} 
+                  onChange={(e) => setAdditionalComment(e.target.value)}
                   aria-label="With textarea" placeholder="Job Description"></textarea>
               </div>
 
@@ -927,10 +972,14 @@ function PmJobDetail() {
                 </div>
                 <div className="">
                   <input type="file" className=
-                  "form-control" 
-                  value={file} 
-                  onChange={(e) => setFile(e.target.files[0])} 
-                  id="inputGroupFile01" />
+                    "form-control"
+                    value={file}
+                    onChange={(e) => {
+                      setFile(e.target.value)
+                      console.log(e)
+                    }
+                    }
+                    id="inputGroupFile01" />
                 </div>
               </div>
 
@@ -938,7 +987,7 @@ function PmJobDetail() {
             <Modal.Footer>
               <Button
                 className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
-                onClick={()=>submitIncomingFile()}
+                onClick={() => submitIncomingFile()}
               >
                 Submit
               </Button>
@@ -963,10 +1012,15 @@ function PmJobDetail() {
         <div className="card-body p-24">
           <div className="gy-4 " id="outgoingTransmittalsContainer">
             {
-              outgoingTransmittals?.length > 0 ? (
+              outgoingTransmittalList?.length > 0 ? (
 
-                outgoingTransmittals.map((t) => (
-                  <div key={t.id} className="transmittal-card d-flex justify-content-around align-items-center border border-secondary my-3 py-3" onClick={() => openTransmittalDetailModal(t.id)}>
+                outgoingTransmittalList.map((t) => (
+                  <div key={t.id} className="transmittal-card d-flex justify-content-around align-items-center border border-secondary my-3 py-3"
+                    onClick={() => {
+                      setOutgoingTransmittal(t);
+                      setTransmittalDetailModal(true);
+                    }}
+                  >
                     <p className="m-auto">
                       <strong>ID:</strong> {t.id}
                     </p>
@@ -991,116 +1045,107 @@ function PmJobDetail() {
           </Button>
 
 
-          {outTransmittal && (
-
-            <Modal
-              show={outTransmittal}
-              size="lg"
-              aria-labelledby="contained-modal-title-vcenter"
-              centered
-            >
-              <Modal.Header>
-                <Modal.Title id="contained-modal-title-vcenter">
-                  Create Outgoing Transmittal
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-
-                <div className="tab-container d-flex align-items-center gap-2">
-                  <button className="tab-button btn rounded-pill btn btn-outline-secondary text-secondary-600 radius-8 px-5 py-4" onClick="openTab(event, 'ENG')">Engineering (ENG)</button>
-                  <button className="tab-button btn rounded-pill btn btn-outline-secondary text-secondary-600 radius-8 px-5 py-4" onClick="openTab(event, 'QAQC')">QA/QC</button>
-                  {/* <!-- Add more department tabs as needed --> */}
-                </div>
-
-                <div id="ENG" className="tab-content">
-                  <p className="mt-5">Total Selected Files: <span id="ENGFileCount">0</span></p>
-                  <Table bordered id="" className="">
+          <Modal
+            show={outTransmittal}
+            size="lg"
+            aria-labelledby="contained-modal-title-vcenter"
+            centered
+          >
+            <Modal.Header>
+              <Modal.Title id="contained-modal-title-vcenter">
+                Create Outgoing Transmittal
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <div className="tab-container d-flex align-items-center gap-2">
+                {Object.keys(departments).map((dept) => (
+                  <button
+                    key={dept}
+                    className={`tab-button btn rounded-pill ${activeTab === dept ? "btn-primary" : "btn-outline-secondary"
+                      }`}
+                    onClick={() => setActiveTab(dept)}
+                  >
+                    {dept}
+                  </button>
+                ))}
+              </div>
+              {Object.entries(departments).map(([dept, files]) => (
+                <div
+                  id={dept}
+                  className="tab-content"
+                  style={{ display: activeTab === dept ? "block" : "none" }}
+                  key={dept}
+                >
+                  <p className="mt-5">
+                    Total Selected Files:{" "}
+                    {Object.values(selectedFiles[dept] || {}).filter(Boolean).length}
+                  </p>
+                  <Table bordered>
                     <thead>
                       <tr>
-                        <th style={{ width: '20%', textAlign: "center" }}>Select</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>File Description</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>Revision</th>
-                        <th style={{ width: '25%', textAlign: "center" }}>Document No.</th>
+                        <th className="d-flex align-items-center justify-content-center text-center align-self-center m-auto">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id="selectAllFiles"
+                            checked={selectAll}
+                            onChange={toggleSelectAllFiles}
+                          />
+                        </th>
+                        <th className="text-center">File Description</th>
+                        <th className="text-center">Revision</th>
+                        <th className="text-center">Document No.</th>
                       </tr>
                     </thead>
-                    <tbody id="ENGFileList">
-                      {/* <!-- Files for ENG will populate here dynamically --> */}
-
-                      {departments.ENG.map((file, index) => (
+                    <tbody>
+                      {files.map((file, index) => (
                         <tr key={index}>
-                          <td>
+                          <td className="d-flex align-items-center justify-content-center text-center align-self-center m-auto">
                             <input
                               type="checkbox"
-                              onChange={() => handleFileSelection("ENG", index)}
+                              className="form-check-input"
+                              checked={selectedFiles[dept]?.[index] || false}
+                              onChange={() => handleFileSelection(dept, index)}
                             />
                           </td>
-                          <td>{file.fileDescription}</td>
+                          <td className="text-center">{file.fileDescription}</td>
+                          <td className="text-center">{file.revisions?.length || 0}</td>
+                          <td className="text-center">{file.zsDocumentNo || "N/A"}</td>
                         </tr>
                       ))}
-
-
-
                     </tbody>
                   </Table>
                 </div>
-
-                <div id="QAQC" className="tab-content" style={{ display: "none" }}>
-                  <p className="mt-5">Total Selected Files: <span id="QAQCFileCount">0</span></p>
-                  <Table bordered id="" className="">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '20%', textAlign: "center" }}>Select</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>File Description</th>
-                        <th style={{ width: '20%', textAlign: "center" }}>Revision</th>
-                        <th style={{ width: '25%', textAlign: "center" }}>Document Attributes</th>
-                      </tr>
-                    </thead>
-                    <tbody id="QAQCFileList">
-                      {/* <!-- Files for QAQC will populate here dynamically --> */}
-
-                      {departments.QAQC.map((file, index) => (
-                        <tr key={index}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              onChange={() => handleFileSelection("QAQC", index)}
-                            />
-                          </td>
-                          <td>{file.fileDescription}</td>
-                        </tr>
-                      ))}
-
-
-
-                    </tbody>
-                  </Table>
-                </div>
-
-                <p className="mt-5">Total Files Selected Across Departments: <span id="totalFileCount">0</span></p>
-
-              </Modal.Body>
-              <Modal.Footer>
-                <Button
-                  className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
-                  onClick={createOutgoingTransmittal}
-                >
-                  Create Transmittal
-                </Button>
-                <Button
-                  className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                  onClick={closeOutgoingTransmittalModal}
-                >
-                  Close
-                </Button>
-              </Modal.Footer>
-            </Modal>
-
-          )}
+              ))}
+              <p className="mt-5">
+                Total Files Selected Across Departments:{" "}
+                {Object.values(selectedFiles).reduce(
+                  (sum, files) =>
+                    sum + Object.values(files || {}).filter(Boolean).length,
+                  0
+                )}
+              </p>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
+                onClick={createOutgoingTransmittal}
+              >
+                Create Transmittal
+              </Button>
+              <Button
+                className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                onClick={closeOutgoingTransmittalModal}
+              >
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
 
 
           <Modal
             show={transmittalDetailModal}
-            size="lg"
+            size="xl"
             aria-labelledby="contained-modal-title-vcenter"
             centered
           >
@@ -1119,16 +1164,18 @@ function PmJobDetail() {
                       </h6>
                     </div>
                     <div className="card-body p-20">
-                      <table>
-                        <tr>
-                          <th>Transmittal ID :</th>
-                          <td>{outgoingTransmittal.id}</td>
-                        </tr>
-                        <tr>
-                          <th>Date :</th>
-                          <td>{outgoingTransmittal.date}</td>
-                        </tr>
-                      </table>
+                      <Table>
+                        <tbody>
+                          <tr>
+                            <th>Transmittal ID :</th>
+                            <td>{outgoingTransmittal.id}</td>
+                          </tr>
+                          <tr>
+                            <th>Date :</th>
+                            <td>{outgoingTransmittal.date}</td>
+                          </tr>
+                        </tbody>
+                      </Table>
                     </div>
                   </div>
                 )
@@ -1143,16 +1190,18 @@ function PmJobDetail() {
                       </h6>
                     </div>
                     <div className="card-body p-20">
-                      <table>
-                        <tr>
-                          <th>Job ID :</th>
-                          <td>{currentJob ? currentJob.jobId : "N/A"}</td>
-                        </tr>
-                        <tr>
-                          <th>Job Name :</th>
-                          <td>{currentJob ? currentJob.jobName : "N/A"}</td>
-                        </tr>
-                      </table>
+                      <Table>
+                        <tbody>
+                          <tr>
+                            <th>Job ID :</th>
+                            <td>{currentJob ? currentJob.jobId : "N/A"}</td>
+                          </tr>
+                          <tr>
+                            <th>Job Name :</th>
+                            <td>{currentJob ? currentJob.jobName : "N/A"}</td>
+                          </tr>
+                        </tbody>
+                      </Table>
                     </div>
                   </div>
                 )
@@ -1166,28 +1215,28 @@ function PmJobDetail() {
                       <h6 className="text-lg fw-semibold mb-0">File List</h6>
                     </div>
                     <div className="card-body p-20">
-                      <table>
+                      <Table>
                         <thead>
                           <tr>
-                            <th>Description</th>
-                            <th>Equipment Tag	</th>
-                            <th>NMR Code	</th>
-                            <th>Client Code	</th>
-                            <th>Client Document No.	</th>
-                            <th>ZS Document No.	</th>
-                            <th>Revision	</th>
-                            <th>Planned Date	</th>
-                            <th>Owner</th>
-                            <th>File Actions</th>
+                            <th style={{width : "10%"}}>Description</th>
+                            <th style={{width : "10%"}} >Equipment Tag	</th>
+                            <th style={{width : "10%"}} >NMR Code	</th>
+                            <th style={{width : "10%"}} >Client Code	</th>
+                            <th style={{width : "10%"}} >Client Document No.	</th>
+                            <th style={{width : "10%"}} >ZS Document No.	</th>
+                            <th style={{width : "10%"}} >Revision	</th>
+                            <th style={{width : "10%"}} >Planned Date	</th>
+                            <th style={{width : "10%"}} >Owner</th>
+                            <th style={{width : "10%"}} >File Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {
+                          {/* {
                             outgoingTransmittal.files.map((file) => {
                               return (
                                 <tr>
                                   <td>${file.description || "-"}</td>
-                                  <td>${file.supportData.equipmentTag || "-"}</td>
+                                  <td>${file.supportData.equipmentTag || ""}</td>
                                   <td>${file.supportData.nmrCode || "-"}</td>
                                   <td>${file.supportData.clientCode || "-"}</td>
                                   <td>${
@@ -1203,9 +1252,9 @@ function PmJobDetail() {
                                 </tr>
                               )
                             })
-                          }
+                          } */}
                         </tbody>
-                      </table>
+                      </Table>
                     </div>
                   </div>
                 ) :

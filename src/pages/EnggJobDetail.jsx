@@ -17,12 +17,27 @@ function EnggJobDetail() {
   const [totalJobs, setTotalJobs] = useState([]);
   const [rows, setRows] = useState([]);
   const [isUpdate, setIsUpdate] = useState(false);
+  const [transmittals,setTransmittals] = useState([]);
+
+  const [statistics, setStatistics] = useState({
+    approved: 0,
+    shared: 0,
+    returned: 0,
+    new: 0,
+    transmittalCount: 0,
+  });
 
 
   const [engRequests, setEngRequests] = useState([]);
   const [engMasterlistModal, setEngMasterlistModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
+
+  const [masterListRows, setMasterListRows] = useState([]);
+  const [outgoingTransmittals, setOutgoingTransmittals] = useState([]);
+  const [modalData, setModalData] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [detailModal, setDetailModal] = useState(false);
 
   // modal view
   const [transmittalDetailModal, setTransmittalDetailModal] = useState(false);
@@ -41,11 +56,15 @@ function EnggJobDetail() {
   const [currentFileIndex, setCurrentFileIndex] = useState(null);
   const [revisions, setRevisions] = useState([]);
 
+
+
   useEffect(() => {
 
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     const jobId = localStorage.getItem("currentJobId");
     const job = jobs.find((j) => j.jobId === jobId);
+    const outgoingTrans = JSON.parse(localStorage.getItem("outgoingTransmittals")) || [];
+    setOutgoingTransmittals(outgoingTrans);
 
     loadJobDetails();
     setTotalJobs(jobs);
@@ -53,6 +72,7 @@ function EnggJobDetail() {
     if (job) {
       setCurrentJob(job);
       setCurrentJobID(job.id)
+      setTransmittals(job.transmittals || []);
     } else {
       alert("Job not found.");
     }
@@ -73,16 +93,18 @@ function EnggJobDetail() {
 
     console.log(engRequests);
 
-    if (currentJob && currentJob.masterlist && currentJob.masterlist.ENG) {
+    if (job && job.masterlist && job.masterlist.ENG) {
       setIsUpdate(true);
       // Populate the rows with existing data
-      setRows(currentJob.masterlist.ENG);
+      setRows(job.masterlist.ENG);
     } else {
       setIsUpdate(false);
       setRows([])
     }
 
-  }, [])
+      loadMasterListRows(job, outgoingTrans);
+
+  }, [engMasterlistModal, detailModal,revisionModalShow])
 
 
   console.log("eng master list", engRequests);
@@ -91,6 +113,7 @@ function EnggJobDetail() {
   console.log("masterlist", currentJob?.masterlist);
   console.log("master list state", masterlist);
 
+  console.log("transmittal", transmittal);
 
   function loadJobDetails() {
     const jobId = localStorage.getItem('currentJobId');
@@ -161,9 +184,7 @@ function EnggJobDetail() {
 
 
   const handleSave = () => {
-    setEngMasterlistModal(false);
-    // Call this function to populate the masterlist when the page loads
-
+    
     const masterlistData = {
       fileDescription: fileDesc,
       equipmentTag: equipTag,
@@ -199,6 +220,7 @@ function EnggJobDetail() {
 
     // Close the modal
     closeMasterlistModal();
+    setEngMasterlistModal(false);
   };
 
   //   // Function to close the modal
@@ -238,7 +260,7 @@ function EnggJobDetail() {
     if (jobIndex !== -1) {
       const updatedJobs = [...jobs];
       updatedJobs[jobIndex].masterlist.ENG[currentFileIndex].revisions = updatedRevisions;
-  
+
       // Save the updated jobs array back to localStorage
       localStorage.setItem('jobs', JSON.stringify(updatedJobs));
     } else {
@@ -248,7 +270,7 @@ function EnggJobDetail() {
 
   // Mock function to estimate page count (replace with actual logic)
   function estimatePageCount(file) {
-    return 20; 
+    return 20;
   }
 
 
@@ -258,72 +280,182 @@ function EnggJobDetail() {
     setRevisions([]);
   };
 
-  //   // Function to add a new row to the masterlist table
-
-  //   function addMasterlistRow() {
-  //     const tableBody = document.getElementById('masterlistTableBody');
-  //     const newRow = document.createElement('tr');
-
-  //     newRow.innerHTML = `
-  // <td><input type="text" placeholder="File Description"  value="File Description-Test"></td>
-  // <td><input type="text" placeholder="Equipment Tag" value="Equipment Tag-Test"></td>
-  // <td><input type="text" placeholder="NMR Code" value="NMR-Test"></td>
-  // <td><input type="text" placeholder="Client Code" value="Client Code-Test"></td>
-  // <td><input type="text" placeholder="Client Document No." value="Client Document No.-Test"></td>
-  // <td><input type="text" placeholder="ZS Document No." value="ZS Document No.-Test"></td>
-  // <td><input type="date" placeholder="Planned Date"></td>
-  // <td><input type="email" placeholder="Owner (Email)"  value="FileOwner@company.com"></td>
-  // <td><button onclick="deleteRow(this)">Delete</button></td>
-  // `;
-  //     tableBody.appendChild(newRow);
-  //   }
 
 
+  const loadMasterListRows = (job, outgoingTrans) => {
+    let rows = [];
+    let serialNo = 1;
 
-  //   // Function to delete a row
-  //   function deleteRow(button) {
-  //     button.parentElement.parentElement.remove();
-  //   }
+    if (job && job.masterlist && typeof job.masterlist === "object") {
+      for (const [department, files] of Object.entries(job.masterlist)) {
+        files.forEach((file, index) => {
+          const lastRevisionIndex = file.revisions?.length - 1 || 0;
+          const latestRevision = file.revisions?.[lastRevisionIndex] || {};
 
-  //   // Function to save the masterlist to localStorage
+          // Check if the file is shared
+          const isShared = outgoingTrans.some((transmittal) =>
+            transmittal.files.some(
+              (transFile) =>
+                transFile.description === file.fileDescription &&
+                transFile.revision === lastRevisionIndex
+            )
+          );
 
-  //   function saveMasterlist() {
-  //     const tableBody = document.getElementById('masterlistTableBody');
-  //     const rows = Array.from(tableBody.getElementsByTagName('tr'));
+          // Determine file status
+          let status = isShared ? "Shared" : "New";
 
-  //     const masterlistData = rows.map(row => {
-  //       const cells = row.getElementsByTagName('input');
-  //       return {
-  //         fileDescription: cells[0].value,
-  //         equipmentTag: cells[1].value,
-  //         nmrCode: cells[2].value,
-  //         clientCode: cells[3].value,
-  //         clientDocumentNo: cells[4].value,
-  //         zsDocumentNo: cells[5].value,
-  //         plannedDate: cells[6].value,
-  //         ownerEmail: cells[7].value,
-  //       };
-  //     });
+          if (file.incomingRevisions?.[lastRevisionIndex]) {
+            const lastIncoming = file.incomingRevisions[lastRevisionIndex];
+            const commentCode = lastIncoming[lastIncoming.length - 1]?.commentCode || "";
 
-  //     // Retrieve existing jobs from localStorage
-  //     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-  //     const jobId = localStorage.getItem('currentJobId');
-  //     const job = jobs.find(j => j.jobId === jobId);
+            if (["F", "I", "R"].includes(commentCode)) {
+              status = "Approved";
+            } else if (["A", "B", "C", "V"].includes(commentCode)) {
+              status = "Returned";
+            }
+          }
 
-  //     // Add or update the masterlist for the Engineering department
-  //     job.masterlist = job.masterlist || {};
-  //     job.masterlist.ENG = masterlistData;
-
-  //     localStorage.setItem('jobs', JSON.stringify(jobs));
-  //     closeMasterlistModal();
-
-  //     // Call this function to populate the masterlist when the page loads
-  //     displayEngineeringMasterlist();
-
-  //   }
+          rows.push({
+            serialNo: serialNo++,
+            department,
+            fileDescription: file.fileDescription,
+            revision: `Rev ${lastRevisionIndex}`,
+            lastUpdated: latestRevision.date || "N/A",
+            status,
+            owner: file.ownerEmail,
+            index,
+          });
+        });
+      }
+    }
+    setMasterListRows(rows);
+    console.log(rows);
+  };
+  console.log(masterListRows);
 
 
 
+  const openFileDetailsModal = (department, fileDescription) => {
+    if (!currentJob || !currentJob.masterlist) return;
+
+    const files = currentJob.masterlist[department];
+    const file = files.find((f) => f.fileDescription === fileDescription);
+
+    if (file) {
+      setModalData({
+        department,
+        fileDescription: file.fileDescription,
+        ownerEmail: file.ownerEmail,
+        revisions: file.revisions || [],
+        incomingRevisions: file.incomingRevisions || [],
+      });
+      setDetailModal(true);
+    }
+  };
+
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "New":
+        return "status-new";
+      case "Shared":
+        return "status-shared";
+      case "Approved":
+        return "status-approved";
+      case "Returned":
+        return "status-returned";
+      default:
+        return "status-default";
+    }
+  };
+
+  const calculateFileStatistics = () => {
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const outgoingTransmittals = JSON.parse(localStorage.getItem('outgoingTransmittals')) || [];
+  
+    let stats = {
+      approved: 0,
+      shared: 0,
+      returned: 0,
+      new: 0,
+    };
+  
+    jobs.forEach((job) => {
+      if (job.masterlist) {
+        for (const [department, files] of Object.entries(job.masterlist)) {
+          files.forEach((file) => {
+            const revisions = file.revisions || []; // Ensure `revisions` is an array
+            const lastRevisionIndex = revisions.length > 0 ? revisions.length - 1 : -1; // Get the index safely
+  
+            let status = "New"; // Default status
+  
+            // Check if the latest revision exists and has been shared
+            if (lastRevisionIndex >= 0) {
+              const isShared = outgoingTransmittals.some((transmittal) =>
+                transmittal.files.some(
+                  (transFile) =>
+                    transFile.description === file.fileDescription &&
+                    transFile.revision === lastRevisionIndex
+                )
+              );
+  
+              if (isShared) {
+                status = "Shared";
+              }
+            }
+  
+            // Check for client feedback in incomingRevisions
+            const incomingRevisions = file.incomingRevisions || [];
+            if (lastRevisionIndex >= 0 && incomingRevisions[lastRevisionIndex]) {
+              const lastIncoming = incomingRevisions[lastRevisionIndex];
+              const commentCode = lastIncoming[lastIncoming.length - 1]?.commentCode;
+  
+              if (["F", "I", "R"].includes(commentCode)) {
+                status = "Approved";
+              } else if (["A", "B", "C", "V"].includes(commentCode)) {
+                status = "Returned";
+              }
+            }
+  
+            // Increment the relevant count
+            if (status === "Approved") stats.approved++;
+            else if (status === "Returned") stats.returned++;
+            else if (status === "Shared") stats.shared++;
+            else stats.new++;
+          });
+        }
+      }
+    });
+  
+    return stats;
+  };
+
+  const updateStats = () => {
+    const stats = calculateFileStatistics();
+    const outgoingTransmittals = JSON.parse(localStorage.getItem('outgoingTransmittals')) || [];
+    const transmittalsCount = outgoingTransmittals.length;
+  
+    setStatistics({
+      ...stats,
+      transmittalCount: transmittalsCount,
+    });
+  }
+
+
+  useEffect(() => {
+    // Update stats when the component is mounted
+    updateStats();
+
+    // Optionally, add a listener for changes to localStorage (if applicable)
+    const handleStorageChange = () => {
+      updateStats();
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
 
   return (
@@ -343,7 +475,7 @@ function EnggJobDetail() {
                 <div className="card-body p-20">
                   <div className="d-flex flex-column-reverse align-items-center justify-content-between">
                     <div className="d-flex flex-column align-items-center justify-content-between gap-1">
-                      <h6 className="text-center mt-3">9</h6>
+                      <h6 className="text-center mt-3"> {statistics.approved}</h6>
                       <p className="fw-medium text-primary-light mb-0">
                         Approved Files
                       </p>
@@ -365,7 +497,7 @@ function EnggJobDetail() {
                 <div className="card-body p-20">
                   <div className="d-flex flex-column-reverse align-items-center justify-content-between gap-3">
                     <div>
-                      <h6 className="text-center my-2">9</h6>
+                      <h6 className="text-center my-2">{statistics.shared}</h6>
                       <p className="fw-medium text-primary-light mb-1">
                         Shared Files
                       </p>
@@ -387,7 +519,7 @@ function EnggJobDetail() {
                 <div className="card-body p-20">
                   <div className="d-flex flex-column-reverse flex-wrap align-items-center justify-content-between gap-3">
                     <div>
-                      <h6 className="text-center my-2">9</h6>
+                      <h6 className="text-center my-2"> {statistics.returned}</h6>
                       <p className="fw-medium text-primary-light mb-1">
                         Returned Files
                       </p>
@@ -409,7 +541,7 @@ function EnggJobDetail() {
                 <div className="card-body p-20">
                   <div className="d-flex flex-column-reverse align-items-center justify-content-between gap-3">
                     <div>
-                      <h6 className="text-center my-2">9</h6>
+                      <h6 className="text-center my-2">{statistics.new}</h6>
                       <p className="fw-medium text-primary-light mb-1">
                         New Files
                       </p>
@@ -431,7 +563,7 @@ function EnggJobDetail() {
                 <div className="card-body p-20">
                   <div className="d-flex flex-column-reverse align-items-center justify-content-between gap-3">
                     <div>
-                      <h6 className="text-center my-2">9</h6>
+                      <h6 className="text-center my-2">{statistics.transmittalCount}</h6>
                       <p className="fw-medium text-primary-light mb-1">
                         Total Transmittals
                       </p>
@@ -519,18 +651,17 @@ function EnggJobDetail() {
               <div className=" shadow-none border w-100">
                 <div className="card-body p-20">
                   {
-                    currentJob ? (
-                      currentJob.transmittals && currentJob.transmittals.length > 0 ? (
+                      transmittals && transmittals.length > 0 ? (
                         <Table bordered id="" className="">
                           <thead>
                             <tr>
-                              <th>Transmittal ID</th>
-                              <th>Document</th>
-                              <th>Date</th>
+                              <th className="text-center">Transmittal ID</th>
+                              <th className="text-center">Document</th>
+                              <th className="text-center">Date</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {currentJob.transmittals
+                            {transmittals
                               .filter(
                                 (transmittal) =>
                                   transmittal.notifiedDepartments &&
@@ -538,13 +669,13 @@ function EnggJobDetail() {
                               )
                               .map((transmittal, index) => (
                                 <tr key={index}>
-                                  <td onClick={() => viewTransmittalDetails(transmittal.date)}>
+                                  <td className="text-center"  onClick={() => viewTransmittalDetails(transmittal.date)}>
                                     {transmittal.id}
                                   </td>
-                                  <td onClick={() => viewTransmittalDetails(transmittal.date)}>
+                                  <td  className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
                                     {transmittal.date}
                                   </td>
-                                  <td onClick={() => viewTransmittalDetails(transmittal.date)}>
+                                  <td  className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
                                     {transmittal.summary}
                                   </td>
                                 </tr>
@@ -552,11 +683,10 @@ function EnggJobDetail() {
                           </tbody>
                         </Table>
                       ) : (
-                        <p>No transmittals available for Engineering.</p>
+                        <tr>
+                          <td colSpan="4">No Transmittals Found</td>
+                        </tr>
                       )
-                    ) : (
-                      <p>Loading job details...</p>
-                    )
                   }
 
                   {/*Transmittal Detail*/}
@@ -578,7 +708,6 @@ function EnggJobDetail() {
 
                       <div>
                         <Table bordered id="">
-
                           {
                             transmittal && (
                               <tbody>
@@ -601,28 +730,30 @@ function EnggJobDetail() {
                         {
                           currentJob && (
                             <Table bordered id="revision-history-table">
-                              <tr>
-                                <th>Job ID : </th>
-                                <td>{currentJob.jobId}</td>
-                              </tr>
-                              <tr>
-                                <th>Job Name:</th>
-                                <td>{currentJob.jobName}</td>
-                              </tr>
-                              <tr>
-                                <th>Client:</th>
-                                <td>{currentJob.client}</td>
-                              </tr>
-                              <tr>
-                                <th>EPC:</th>
-                                <td>{currentJob.epc}</td>
-                              </tr>
-                              <tr>
-                                <th>
-                                  End User:
-                                </th>
-                                <td>{currentJob.endUser}</td>
-                              </tr>
+                              <tbody>
+                                <tr>
+                                  <th>Job ID : </th>
+                                  <td>{currentJob.jobId}</td>
+                                </tr>
+                                <tr>
+                                  <th>Job Name:</th>
+                                  <td>{currentJob.jobName}</td>
+                                </tr>
+                                <tr>
+                                  <th>Client:</th>
+                                  <td>{currentJob.client}</td>
+                                </tr>
+                                <tr>
+                                  <th>EPC:</th>
+                                  <td>{currentJob.epc}</td>
+                                </tr>
+                                <tr>
+                                  <th>
+                                    End User:
+                                  </th>
+                                  <td>{currentJob.endUser}</td>
+                                </tr>
+                              </tbody>
                             </Table>
                           )
                         }
@@ -638,14 +769,13 @@ function EnggJobDetail() {
 
                             <thead>
                               <tr>
-                                <th style={{ width: "25%" }}>File Name</th>
-                                <th style={{ width: "25%" }}>File Type</th>
-                                <th style={{ width: "25%" }}>Size</th>
-                                <th style={{ width: "25%" }}>Last Modified</th>
-                                <th style={{ width: "25%" }}>Page Count	</th>
-                                <th style={{ width: "25%" }}>Revision</th>
-                                <th style={{ width: "25%" }}>Revision</th>
-                                <th style={{ width: "25%" }}>Actions</th>
+                                <th className="text-center"  style={{ width: "14.5%" }}>File Name</th>
+                                <th className="text-center"  style={{ width: "12.5%" }}>File Type</th>
+                                <th className="text-center"  style={{ width: "12.5%" }}>Size</th>
+                                <th className="text-center"  style={{ width: "12.5%" }}>Last Modified</th>
+                                <th className="text-center"  style={{ width: "12.5%" }}>Page Count	</th>
+                                <th className="text-center"  style={{ width: "12.5%" }}>Revision</th>
+                                <th className="text-center"  style={{ width: "12.5%" }}>Actions</th>
                               </tr>
                             </thead>
                             < tbody>
@@ -657,13 +787,13 @@ function EnggJobDetail() {
                                     if (!doc) return null;
                                     return (
                                       <tr key={index}>
-                                        <td>{doc.fileName}</td>
-                                        <td>{doc.fileType.toUpperCase()}</td>
-                                        <td>{doc.fileSize}</td>
-                                        <td>{doc.lastModified}</td>
-                                        <td>{doc.pageCount}</td>
-                                        <td>{file.revision}</td>
-                                        <td><a href="${file.fileLink}" target="_blank">View</a></td>
+                                        <td className="text-center" >{doc.fileName}</td>
+                                        <td className="text-center" >{doc.fileType.toUpperCase()}</td>
+                                        <td className="text-center" >{doc.fileSize}</td>
+                                        <td className="text-center" >{doc.lastModified}</td>
+                                        <td className="text-center" >{doc.pageCount}</td>
+                                        <td className="text-center" >{doc.revision}</td>
+                                        <td className="text-center" ><a href="${doc.fileLink}" target="_blank">View</a></td>
                                       </tr>
                                     )
                                   })
@@ -706,90 +836,148 @@ function EnggJobDetail() {
                   <Table bordered id="" className="">
                     <thead>
                       <tr>
-                        <th>Serial No.</th>
-                        <th>Department</th>
-                        <th>Description</th>
-                        <th>Current Revision</th>
-                        <th>Last Updated</th>
-                        <th>Status</th>
-                        <th>Owner</th>
-                        <th>Action</th>
+                        <th className="text-center" style={{width:"12.5%"}}>Serial No.</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Department</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Description</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Current Revision</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Last Updated</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Status</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Owner</th>
+                        <th className="text-center" style={{width:"12.5%"}} >Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-
-                      </tr>
+                      {masterListRows.map((row, index) => (
+                        <tr
+                          key={index}
+                          className={getStatusClass(row.status)}
+                        >
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.serialNo}</td>
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.department}</td>
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.fileDescription}</td>
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.revision}</td>
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.lastUpdated}</td>
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.status}</td>
+                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.owner}</td>
+                          <td className="text-center d-flex align-items-center justify-content-center">
+                            <Button
+                              className="upload-btn text-center d-flex align-items-center justify-content-center"
+                              onClick={() => uploadFile(index)}
+                              variant="outline-secondary"
+                            >
+                              Upload
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </Table>
                 </div>
 
                 {/*Files Details*/}
-                <Modal
-                  show={false}
-                  // jobId={selectedJobId}
-                  // srNo={selectedSrNo}
-                  size="xl"
-                  aria-labelledby="contained-modal-title-vcenter"
-                  centered
-                  id="revisionModal"
-                >
-                  <Modal.Header>
-                    <Modal.Title id="contained-modal-title-vcenter">
-                      Files Details
-                    </Modal.Title>
-                  </Modal.Header>
-                  <Modal.Body>
+                {modalData && (
 
-                    <div>
-                      <Table bordered id="revision-history-table">
-                        <tr>
-                          <th>Deparment : </th>
-                          <td>ENG</td>
-                        </tr>
-                        <tr>
-                          <th>File Description:</th>
-                          <td>File Description-Test</td>
-                        </tr>
-                        <tr>
-                          <th>Owner:</th>
-                          <td>File Owner@company.com</td>
-                        </tr>
-                      </Table>
-                    </div>
+                  <Modal
+                    show={detailModal}
+                    onHide={() => setDetailModal(false)}
+                    size="xl"
+                    aria-labelledby="contained-modal-title-vcenter"
+                    centered
+                    id="revisionModal"
+                  >
+                    <Modal.Header>
+                      <Modal.Title id="contained-modal-title-vcenter">
+                        Files Details
+                      </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
 
-                    <div className="card h-100 p-0 radius-12 mt-24">
-                      <div className="card-body p-24">
-
+                      <div>
                         <Table bordered id="revision-history-table">
-                          <thead>
+                          <tbody>
                             <tr>
-                              <th style={{ width: "12.5%" }}>Rev No</th>
-                              <th style={{ width: "12.5%" }}>View File Sent</th>
-                              <th style={{ width: "12.5%" }}>Sent Date</th>
-                              <th style={{ width: "12.5%" }}>Return File</th>
-                              <th style={{ width: "12.5%" }}>Comment Code</th>
-                              <th style={{ width: "12.5%" }}>PM Comment</th>
-                              <th style={{ width: "12.5%" }}>Return Date</th>
-                              <th style={{ width: "12.5%" }}>File Status</th>
+                              <th>Deparment : </th>
+                              <td>{modalData.department}</td>
                             </tr>
-                          </thead>
-                          <tbody id="">
-
+                            <tr>
+                              <th>File Description:</th>
+                              <td>{modalData.fileDescription}</td>
+                            </tr>
+                            <tr>
+                              <th>Owner:</th>
+                              <td>{modalData.ownerEmail}</td>
+                            </tr>
                           </tbody>
                         </Table>
-
                       </div>
-                    </div>
-                  </Modal.Body>
-                  <Modal.Footer>
-                    <Button
-                      className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                    >
-                      Close
-                    </Button>
-                  </Modal.Footer>
-                </Modal>
+
+                      <div className="card h-100 p-0 radius-12 mt-24">
+                        <div className="card-body p-24">
+
+                          <Table bordered id="revision-history-table">
+                            <thead>
+                              <tr>
+                                <th  className="text-center" style={{ width: "10.5%" }}>Rev No</th>
+                                <th  className="text-center" style={{ width: "12.5%" }}>View Sent File</th>
+                                <th  className="text-center" style={{ width: "12.5%" }}>Sent Date</th>
+                                <th  className="text-center" style={{ width: "12.5%" }}>Return File</th>
+                                <th className="text-center"  style={{ width: "14.5%" }}>Comment Code</th>
+                                <th  className="text-center" style={{ width: "12.5%" }}>PM Comment</th>
+                                <th  className="text-center" style={{ width: "12.5%" }}>Return Date</th>
+                                <th  className="text-center" style={{ width: "12.5%" }}>File Status</th>
+                              </tr>
+                            </thead>
+                            <tbody id="">
+                              {modalData.revisions.map((revision, index) => {
+                                const incomingFeedback = modalData.incomingRevisions[index];
+                                const lastFeedback = incomingFeedback?.[incomingFeedback.length - 1] || {};
+                                const status = ["F", "I", "R"].includes(lastFeedback.commentCode)
+                                  ? "Approved"
+                                  : ["A", "B", "C", "V"].includes(lastFeedback.commentCode)
+                                    ? "Returned"
+                                    : "New";
+
+                                return (
+                                  <tr key={index} className={getStatusClass(status)}>
+                                    <td className="text-center">Rev {index}</td>
+                                    <td className="text-center">
+                                      <a href={revision.hash} target="_blank" rel="noopener noreferrer">
+                                        View
+                                      </a>
+                                    </td>
+                                    <td className="text-center">{revision.date}</td>
+                                    <td className="text-center">
+                                      {lastFeedback.hash ? (
+                                        <a href={lastFeedback.hash} target="_blank" rel="noopener noreferrer">
+                                          View
+                                        </a>
+                                      ) : (
+                                        "N/A"
+                                      )}
+                                    </td>
+                                    <td className="text-center">{lastFeedback.commentCode || "N/A"}</td>
+                                    <td className="text-center">{lastFeedback.additionalComment || "N/A"}</td>
+                                    <td className="text-center">{lastFeedback.date || "N/A"}</td>
+                                    <td className="text-center">{status}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </Table>
+                        </div>
+                      </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                      <Button
+                        className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                        onClick={()=>setDetailModal(false)}
+                      >
+                        Close
+                      </Button>
+                    </Modal.Footer>
+                  </Modal>
+
+                )}
 
                 {/*File Revisions*/}
                 <Modal
@@ -809,22 +997,22 @@ function EnggJobDetail() {
                     <Table bordered id="revision-history-table">
                       <thead>
                         <tr>
-                          <th style={{ width: "15%" }}>Revision</th>
-                          <th style={{ width: "35%" }}>File Hash</th>
-                          <th style={{ width: "15%" }}>File Date</th>
-                          <th style={{ width: "10%" }}>Page Count	</th>
-                          <th style={{ width: "10%" }}>File Size</th>
-                          <th style={{ width: "10%" }}>Actions</th>
+                          <th className="text-center" style={{ width: "15%" }}>Revision</th>
+                          <th  className="text-center" style={{ width: "35%" }}>File Hash</th>
+                          <th className="text-center"  style={{ width: "15%" }}>File Date</th>
+                          <th  className="text-center" style={{ width: "10%" }}>Page Count	</th>
+                          <th  className="text-center" style={{ width: "10%" }}>File Size</th>
+                          <th  className="text-center" style={{ width: "10%" }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody id="revision-history-body">
                         {revisions.map((revision, index) => (
                           <tr key={index}>
-                            <td>{index}</td>
-                            <td>{revision.hash}</td>
-                            <td>{revision.date}</td>
-                            <td>{revision.pageCount}</td>
-                            <td>{revision.size}</td>
+                            <td className="text-center" >{index}</td>
+                            <td className="text-center" >{revision.hash}</td>
+                            <td className="text-center" >{revision.date}</td>
+                            <td className="text-center" >{revision.pageCount}</td>
+                            <td className="text-center" >{revision.size}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -874,12 +1062,13 @@ function EnggJobDetail() {
                         {engRequests.map((request, index) => (
                           <div className="col w-100" key={index}>
                             <div
-                              className="masterlist-request-card card shadow-none border w-100 d-flex flex-row align-items-center justify-content-between px-3"
+                              className="masterlist-request-card card shadow-none w-100 d-flex flex-row align-items-center justify-content-between px-3"
                               style={{
-                                borderLeft: `5px solid ${determineDueDateColor(
+                                border: `1px solid ${determineDueDateColor(
                                   request.dueDate
                                 )}`,
                               }}
+                                
                             >
                               <div className="request-details p-20">
                                 <p>
@@ -901,8 +1090,9 @@ function EnggJobDetail() {
                                 </p>
                               </div>
                               <Button
-                                className="create-masterlist-btn btn btn-primary"
+                                className="create-masterlist-btn btn"
                                 onClick={() => handleRequestClick(currentJobID, request)}
+                                variant="outline-secondary"
                               >
                                 Create Masterlist
                               </Button>
@@ -925,13 +1115,14 @@ function EnggJobDetail() {
                   centered
                   id="revisionModal"
                   style={{ display: engMasterlistModal ? "flex" : "none" }}
-                // onClose={() => setRevisionModalShow(false)}
+                  onHide={() => setEngMasterlistModal(false)}
                 >
                   <Modal.Header closeButton>
                     <Modal.Title id="contained-modal-title-vcenter">
                       Engineering Masterlist
                     </Modal.Title>
                   </Modal.Header>
+
                   <Modal.Body>
                     <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
                     {/* {rows.map((row, index) => ( */}
@@ -1070,6 +1261,7 @@ function EnggJobDetail() {
                     </Button>
 
                   </Modal.Body>
+
                   <Modal.Footer>
                     <Button
                       className="btn rounded-pill btn-primary-100 text-primary-900 radius-8 px-20 py-11"
@@ -1107,15 +1299,15 @@ function EnggJobDetail() {
                   <Table bordered id="" className="">
                     <thead>
                       <tr>
-                        <th>File Description</th>
-                        <th>Equipment Tag</th>
-                        <th>NMR Code</th>
-                        <th>Client Code</th>
-                        <th>Client Document No.</th>
-                        <th>ZS Document No.</th>
-                        <th>Planned Date</th>
-                        <th>Owner (Email)</th>
-                        <th>Upload</th>
+                        <th className="text-center">File Description</th>
+                        <th className="text-center">Equipment Tag</th>
+                        <th className="text-center">NMR Code</th>
+                        <th className="text-center">Client Code</th>
+                        <th className="text-center">Client Document No.</th>
+                        <th className="text-center">ZS Document No.</th>
+                        <th className="text-center">Planned Date</th>
+                        <th className="text-center">Owner (Email)</th>
+                        <th className="text-center">Upload</th>
                       </tr>
                     </thead>
                     {
@@ -1123,24 +1315,31 @@ function EnggJobDetail() {
                         <tbody>
                           {masterlist.ENG.map((file, index) => (
                             <tr key={index}>
-                              <td>{file.fileDescription}</td>
-                              <td>{file.equipmentTag}</td>
-                              <td>{file.nmrCode}</td>
-                              <td>{file.clientCode || "N/A"}</td>
-                              <td>{file.clientDocumentNo || "N/A"}</td>
-                              <td>{file.zsDocumentNo || "N/A"}</td>
-                              <td>{file.plannedDate || "N/A"}</td>
-                              <td>{file.ownerEmail || "N/A"}</td>
-                              <td>
-                                <button className="upload-btn" onClick={() => uploadFile(index)}>
+                              <td className="text-center">{file.fileDescription}</td>
+                              <td className="text-center">{file.equipmentTag}</td>
+                              <td className="text-center">{file.nmrCode}</td>
+                              <td className="text-center">{file.clientCode || "N/A"}</td>
+                              <td className="text-center">{file.clientDocumentNo || "N/A"}</td>
+                              <td className="text-center">{file.zsDocumentNo || "N/A"}</td>
+                              <td className="text-center">{file.plannedDate || "N/A"}</td>
+                              <td className="text-center">{file.ownerEmail || "N/A"}</td>
+                              <td className="text-center">
+                                <Button className="upload-btn"
+                                 onClick={() => uploadFile(index)}
+                                  variant="outline-secondary"
+                                >
                                   Upload
-                                </button>
+                                </Button>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       ) : (
-                        <p className="text-center">No masterlist entries available.</p>
+                        <tbody>
+                          <td colSpan={9} className="text-center">
+                            No masterlist entries available
+                          </td>
+                        </tbody>
                       )
                     }
                   </Table>
