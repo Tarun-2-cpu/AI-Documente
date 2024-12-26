@@ -694,6 +694,7 @@ function PmJobDetail() {
             size="xl"
             aria-labelledby="contained-modal-title-vcenter"
             centered
+            scrollable
             id="notifyModal"
           >
             <Modal.Header>

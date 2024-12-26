@@ -5,7 +5,7 @@ import { Icon } from '@iconify/react/dist/iconify.js'
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
-
+import ModalDialog from 'react-bootstrap/ModalDialog'
 
 
 
@@ -773,14 +773,12 @@ function EnggJobDetail() {
                   {/*Transmittal Detail*/}
                   <Modal
                     show={transmittalDetailModal}
-                    // jobId={selectedJobId}
-                    // srNo={selectedSrNo}
-                    size="xl"
-                    aria-labelledby="contained-modal-title-vcenter"
-                    centered
+                    centered={true}
+                    scrollable={true}
+                    size="lg"
                     id="revisionModal"
                   >
-                    <Modal.Header>
+                    <Modal.Header closeButton>
                       <Modal.Title id="contained-modal-title-vcenter">
                         Transmittal Details
                       </Modal.Title>
@@ -853,8 +851,8 @@ function EnggJobDetail() {
                                 <th className="text-center" style={{ width: "14.5%" }}>File Name</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>File Type</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>Size</th>
-                                <th className="text-center" style={{ width: "12.5%" }}>Last Modified</th>
-                                <th className="text-center" style={{ width: "12.5%" }}>Page Count	</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Modified</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Page</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>Revision</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>Actions</th>
                               </tr>
@@ -920,7 +918,7 @@ function EnggJobDetail() {
                         <th className="text-center" style={{ width: "12.5%" }}>Serial No.</th>
                         <th className="text-center" style={{ width: "12.5%" }} >Department</th>
                         <th className="text-center" style={{ width: "12.5%" }} >Description</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Current Revision</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Revision</th>
                         <th className="text-center" style={{ width: "12.5%" }} >Last Updated</th>
                         <th className="text-center" style={{ width: "12.5%" }} >Status</th>
                         <th className="text-center" style={{ width: "12.5%" }} >Owner</th>
@@ -1063,7 +1061,7 @@ function EnggJobDetail() {
                 {/*File Revisions*/}
                 <Modal
                   show={revisionModalShow}
-                  size="xl"
+                  size="lg"
                   aria-labelledby="contained-modal-title-vcenter"
                   centered
                   id="revisionModal"
@@ -1079,10 +1077,10 @@ function EnggJobDetail() {
                       <thead>
                         <tr>
                           <th className="text-center" style={{ width: "15%" }}>Revision</th>
-                          <th className="text-center" style={{ width: "35%" }}>File Hash</th>
+                          <th className="text-center" style={{ width: "28%" }}>File Hash</th>
                           <th className="text-center" style={{ width: "15%" }}>File Date</th>
-                          <th className="text-center" style={{ width: "10%" }}>Page Count	</th>
-                          <th className="text-center" style={{ width: "10%" }}>File Size</th>
+                          <th className="text-center" style={{ width: "14%" }}>Page Count	</th>
+                          <th className="text-center" style={{ width: "13%" }}>File Size</th>
                           <th className="text-center" style={{ width: "10%" }}>Actions</th>
                         </tr>
                       </thead>
@@ -1191,8 +1189,8 @@ function EnggJobDetail() {
                 <Modal
                   show={false}
                   size="xl"
-                  aria-labelledby="contained-modal-title-vcenter"
-                  centered
+                  centered={true}
+                  scrollable
                   onHide={() => setEngMasterlistModal(false)}
                 >
                   <Modal.Header closeButton>
@@ -1346,9 +1344,10 @@ function EnggJobDetail() {
 
                 <Modal
                   show={engMasterlistModal}
-                  size="xl"
+                  size="lg"
                   aria-labelledby="contained-modal-title-vcenter"
                   centered
+                  scrollable
                   onHide={() => setEngMasterlistModal(false)}
                 >
                   <Modal.Header closeButton>
@@ -1359,12 +1358,12 @@ function EnggJobDetail() {
 
                   <Modal.Body>
                     <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
-                    <table className="table table-bordered">
-                      <tbody>
+                    <Table style={{border : "none"}} className="table table-bordered">
+                      {/* <tbody> */}
                         {rows.map((row, index) => (
-                          <td key={index} className="d-flex align-items-center justify-content-evenly flex-wrap">
+                          <tbody key={index} className="d-flex align-items-center justify-content-evenly flex-wrap">
                             <td style={{ width:"50%"}}>
-                              <th style={{ width:"20%"}}>File Desc</th>
+                              <td style={{ width:"20%"}}>File Desc</td>
                               <td style={{ width:"80%"}}>
                                 <input
                                   type="text"
@@ -1378,7 +1377,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>Equip Tag</th>
+                              <td style={{ width: "20%" }}>Equip Tag</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="text"
@@ -1392,7 +1391,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>NMR Code</th>
+                              <td style={{ width: "20%" }}>NMR Code</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="text"
@@ -1404,7 +1403,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>Client Code</th>
+                              <td style={{ width: "20%" }}>Client Code</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="text"
@@ -1418,7 +1417,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>Client Doc No.</th>
+                              <td style={{ width: "20%" }}>Client Doc No.</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="text"
@@ -1432,7 +1431,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>ZS Doc No.</th>
+                              <td style={{ width: "20%" }}>ZS Doc No.</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="text"
@@ -1446,7 +1445,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>Planned Date</th>
+                              <td style={{ width: "20%" }}>Planned Date</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="date"
@@ -1459,7 +1458,7 @@ function EnggJobDetail() {
                               </td>
                             </td>
                             <td style={{ width: "50%" }}>
-                              <th style={{ width: "20%" }}>Owner</th>
+                              <td style={{ width: "20%" }}>Owner</td>
                               <td style={{ width: "80%" }}>
                                 <input
                                   type="email"
@@ -1472,8 +1471,8 @@ function EnggJobDetail() {
                                 />
                               </td>
                             </td>
-                            <td style={{ width: "20%" }}>
-                              <th>Actions</th>
+                            <td style={{ width: "20%", marginTop: "20px" }}>
+                              <td>Actions</td>
                               <td style={{ width: "100%" }}>
                                 <button
                                   className="btn btn-danger"
@@ -1483,10 +1482,10 @@ function EnggJobDetail() {
                                 </button>
                               </td>
                             </td>
-                          </td>
+                          </tbody>
                         ))}
-                      </tbody>
-                    </table>
+                      {/* </tbody> */}
+                    </Table>
 
                     <Button
                       className="btn rounded-pill radius-8 px-3 py-2 mb-3"
@@ -1732,12 +1731,12 @@ function EnggJobDetail() {
                   <Table bordered id="" className="">
                     <thead>
                       <tr>
-                        <th className="text-center">File Description</th>
-                        <th className="text-center">Equipment Tag</th>
+                        <th className="text-center">File</th>
+                        <th className="text-center">Equip. Tag</th>
                         <th className="text-center">NMR Code</th>
                         <th className="text-center">Client Code</th>
-                        <th className="text-center">Client Document No.</th>
-                        <th className="text-center">ZS Document No.</th>
+                        <th className="text-center">Client Doc. No.</th>
+                        <th className="text-center">ZS Doc No.</th>
                         <th className="text-center">Planned Date</th>
                         <th className="text-center">Owner (Email)</th>
                         <th className="text-center">Upload</th>

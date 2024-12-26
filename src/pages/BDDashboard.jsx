@@ -170,16 +170,16 @@ function BDDashboard() {
           </button>
           {
             showModal && (
-              <div className="modal fade show" style={{ display: 'block' }} aria-labelledby="exampleModalLongTitle" aria-hidden="true">
-                <div className="modal-dialog modal-lg" role="document">
-                  <div className="modal-content">
+              <div className="modal fade show scrollable" style={{ display: 'block' }} aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+                <div className="modal-dialog modal-lg scrollable" role="document">
+                  <div className="modal-content scrollable">
                     <div className="modal-header">
                       <h5 className="modal-title" id="exampleModalLongTitle">Create Job</h5>
                       <button type="button" className="close" onClick={() => setShowModal(false)} aria-label="Close" data-dismiss="modal">
                         <span aria-hidden="true">&times;</span>
                       </button>
                     </div>
-                    <div className="modal-body">
+                    <div className="modal-body scrollable">
                       <div className="mb-3">
                         <div className="">
                           <label className="" >Job ID</label>
