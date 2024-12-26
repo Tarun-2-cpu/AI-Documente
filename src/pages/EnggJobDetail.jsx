@@ -17,7 +17,7 @@ function EnggJobDetail() {
   const [totalJobs, setTotalJobs] = useState([]);
   const [rows, setRows] = useState([]);
   const [isUpdate, setIsUpdate] = useState(false);
-  const [transmittals,setTransmittals] = useState([]);
+  const [transmittals, setTransmittals] = useState([]);
 
   const [statistics, setStatistics] = useState({
     approved: 0,
@@ -102,9 +102,9 @@ function EnggJobDetail() {
       setRows([])
     }
 
-      loadMasterListRows(job, outgoingTrans);
+    loadMasterListRows(job, outgoingTrans);
 
-  }, [engMasterlistModal, detailModal,revisionModalShow])
+  }, [engMasterlistModal, detailModal, revisionModalShow])
 
 
   console.log("eng master list", engRequests);
@@ -155,21 +155,57 @@ function EnggJobDetail() {
     setEngMasterlistModal(true);
   };
 
+  // const addRow = () => {
+  //   setRows([
+  //     ...rows,
+  //     {
+  //       fileDescription: "",
+  //       equipmentTag: "",
+  //       nmrCode: "",
+  //       clientCode: "",
+  //       clientDocumentNo: "",
+  //       zsDocumentNo: "",
+  //       plannedDate: "",
+  //       ownerEmail: "",
+  //     },
+  //   ]);
+  // };
+
+
   const addRow = () => {
-    setRows([
-      ...rows,
-      {
-        fileDescription: "",
-        equipmentTag: "",
-        nmrCode: "",
-        clientCode: "",
-        clientDocumentNo: "",
-        zsDocumentNo: "",
-        plannedDate: "",
-        ownerEmail: "",
-      },
-    ]);
+    const newRow = {
+      fileDescription: "",
+      equipmentTag: "",
+      nmrCode: "",
+      clientCode: "",
+      clientDocumentNo: "",
+      zsDocumentNo: "",
+      plannedDate: "",
+      ownerEmail: "",
+    };
+  
+    const updatedRows = [...rows, newRow];
+    setRows(updatedRows);
+  
+    // Update the masterlist in localStorage
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const jobId = localStorage.getItem("currentJobId");
+    const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
+  
+    if (jobIndex !== -1) {
+      const currentJob = jobs[jobIndex];
+      currentJob.masterlist = currentJob.masterlist || {};
+      currentJob.masterlist.ENG = updatedRows; // Update the ENG masterlist
+      jobs[jobIndex] = currentJob;
+  
+      // Save back to localStorage
+      localStorage.setItem("jobs", JSON.stringify(jobs));
+    }
   };
+
+
+  
+
 
   const updateRow = (index, field, value) => {
     const updatedRows = rows.map((row, i) =>
@@ -182,46 +218,91 @@ function EnggJobDetail() {
     setRows(rows.filter((_, i) => i !== index));
   };
 
+  // const deleteRow = (index) => {
+  //   const updatedRows = rows.filter((_, i) => i !== index);
+  //   setRows(updatedRows);
+  
+  //   // Update the masterlist in localStorage
+  //   const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+  //   const jobId = localStorage.getItem("currentJobId");
+  //   const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
+  
+  //   if (jobIndex !== -1) {
+  //     const currentJob = jobs[jobIndex];
+  //     currentJob.masterlist = currentJob.masterlist || {};
+  //     currentJob.masterlist.ENG = updatedRows; // Update the ENG masterlist
+  //     jobs[jobIndex] = currentJob;
+  
+  //     // Save back to localStorage
+  //     localStorage.setItem("jobs", JSON.stringify(jobs));
+  //   }
+  // };
+  
 
   const handleSave = () => {
-    
-    const masterlistData = {
-      fileDescription: fileDesc,
-      equipmentTag: equipTag,
-      nmrCode: nmr,
-      clientCode: clientCode,
-      clientDocumentNo: clientDocNo,
-      zsDocumentNo: zsDocNo,
-      plannedDate: pDate,
-      ownerEmail: owner,
-    }
-
     // Retrieve the existing job data
-    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const jobId = localStorage.getItem('currentJobId');
-    const jobIndex = jobs.findIndex(j => j.jobId === jobId);
-
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const jobId = localStorage.getItem("currentJobId");
+    const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
+  
     if (jobIndex === -1) {
       alert("Job not found!");
       return;
     }
-
-    // Add or update the masterlist for the Engineering department
+  
+    // Update the masterlist for the Engineering department
     const currentJob = jobs[jobIndex];
     currentJob.masterlist = currentJob.masterlist || {};
-    currentJob.masterlist.ENG = Array.isArray(currentJob.masterlist.ENG) ? currentJob.masterlist.ENG : [];
-
-    // Append the new entry to the masterlist array
-    currentJob.masterlist.ENG.push(masterlistData);
-
-    // Update the localStorage
+    currentJob.masterlist.ENG = rows;
+  
+    // Update localStorage
     jobs[jobIndex] = currentJob;
-    localStorage.setItem('jobs', JSON.stringify(jobs));
-
+    localStorage.setItem("jobs", JSON.stringify(jobs));
+  
     // Close the modal
-    closeMasterlistModal();
     setEngMasterlistModal(false);
   };
+  
+
+  // const handleSave = () => {
+
+  //   const masterlistData = {
+  //     fileDescription: fileDesc,
+  //     equipmentTag: equipTag,
+  //     nmrCode: nmr,
+  //     clientCode: clientCode,
+  //     clientDocumentNo: clientDocNo,
+  //     zsDocumentNo: zsDocNo,
+  //     plannedDate: pDate,
+  //     ownerEmail: owner,
+  //   }
+
+  //   // Retrieve the existing job data
+  //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   const jobId = localStorage.getItem('currentJobId');
+  //   const jobIndex = jobs.findIndex(j => j.jobId === jobId);
+
+  //   if (jobIndex === -1) {
+  //     alert("Job not found!");
+  //     return;
+  //   }
+
+  //   // Add or update the masterlist for the Engineering department
+  //   const currentJob = jobs[jobIndex];
+  //   currentJob.masterlist = currentJob.masterlist || {};
+  //   currentJob.masterlist.ENG = Array.isArray(currentJob.masterlist.ENG) ? currentJob.masterlist.ENG : [];
+
+  //   // Append the new entry to the masterlist array
+  //   currentJob.masterlist.ENG.push(masterlistData);
+
+  //   // Update the localStorage
+  //   jobs[jobIndex] = currentJob;
+  //   localStorage.setItem('jobs', JSON.stringify(jobs));
+
+  //   // Close the modal
+  //   closeMasterlistModal();
+  //   setEngMasterlistModal(false);
+  // };
 
   //   // Function to close the modal
   function closeMasterlistModal() {
@@ -372,23 +453,23 @@ function EnggJobDetail() {
   const calculateFileStatistics = () => {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const outgoingTransmittals = JSON.parse(localStorage.getItem('outgoingTransmittals')) || [];
-  
+
     let stats = {
       approved: 0,
       shared: 0,
       returned: 0,
       new: 0,
     };
-  
+
     jobs.forEach((job) => {
       if (job.masterlist) {
         for (const [department, files] of Object.entries(job.masterlist)) {
           files.forEach((file) => {
             const revisions = file.revisions || []; // Ensure `revisions` is an array
             const lastRevisionIndex = revisions.length > 0 ? revisions.length - 1 : -1; // Get the index safely
-  
+
             let status = "New"; // Default status
-  
+
             // Check if the latest revision exists and has been shared
             if (lastRevisionIndex >= 0) {
               const isShared = outgoingTransmittals.some((transmittal) =>
@@ -398,25 +479,25 @@ function EnggJobDetail() {
                     transFile.revision === lastRevisionIndex
                 )
               );
-  
+
               if (isShared) {
                 status = "Shared";
               }
             }
-  
+
             // Check for client feedback in incomingRevisions
             const incomingRevisions = file.incomingRevisions || [];
             if (lastRevisionIndex >= 0 && incomingRevisions[lastRevisionIndex]) {
               const lastIncoming = incomingRevisions[lastRevisionIndex];
               const commentCode = lastIncoming[lastIncoming.length - 1]?.commentCode;
-  
+
               if (["F", "I", "R"].includes(commentCode)) {
                 status = "Approved";
               } else if (["A", "B", "C", "V"].includes(commentCode)) {
                 status = "Returned";
               }
             }
-  
+
             // Increment the relevant count
             if (status === "Approved") stats.approved++;
             else if (status === "Returned") stats.returned++;
@@ -426,7 +507,7 @@ function EnggJobDetail() {
         }
       }
     });
-  
+
     return stats;
   };
 
@@ -434,7 +515,7 @@ function EnggJobDetail() {
     const stats = calculateFileStatistics();
     const outgoingTransmittals = JSON.parse(localStorage.getItem('outgoingTransmittals')) || [];
     const transmittalsCount = outgoingTransmittals.length;
-  
+
     setStatistics({
       ...stats,
       transmittalCount: transmittalsCount,
@@ -651,42 +732,42 @@ function EnggJobDetail() {
               <div className=" shadow-none border w-100">
                 <div className="card-body p-20">
                   {
-                      transmittals && transmittals.length > 0 ? (
-                        <Table bordered id="" className="">
-                          <thead>
-                            <tr>
-                              <th className="text-center">Transmittal ID</th>
-                              <th className="text-center">Document</th>
-                              <th className="text-center">Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {transmittals
-                              .filter(
-                                (transmittal) =>
-                                  transmittal.notifiedDepartments &&
-                                  transmittal.notifiedDepartments.includes("ENG")
-                              )
-                              .map((transmittal, index) => (
-                                <tr key={index}>
-                                  <td className="text-center"  onClick={() => viewTransmittalDetails(transmittal.date)}>
-                                    {transmittal.id}
-                                  </td>
-                                  <td  className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
-                                    {transmittal.date}
-                                  </td>
-                                  <td  className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
-                                    {transmittal.summary}
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </Table>
-                      ) : (
-                        <tr>
-                          <td colSpan="4">No Transmittals Found</td>
-                        </tr>
-                      )
+                    transmittals && transmittals.length > 0 ? (
+                      <Table bordered id="" className="">
+                        <thead>
+                          <tr>
+                            <th className="text-center">Transmittal ID</th>
+                            <th className="text-center">Document</th>
+                            <th className="text-center">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {transmittals
+                            .filter(
+                              (transmittal) =>
+                                transmittal.notifiedDepartments &&
+                                transmittal.notifiedDepartments.includes("ENG")
+                            )
+                            .map((transmittal, index) => (
+                              <tr key={index}>
+                                <td className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
+                                  {transmittal.id}
+                                </td>
+                                <td className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
+                                  {transmittal.date}
+                                </td>
+                                <td className="text-center" onClick={() => viewTransmittalDetails(transmittal.date)}>
+                                  {transmittal.summary}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </Table>
+                    ) : (
+                      <tr>
+                        <td colSpan="4">No Transmittals Found</td>
+                      </tr>
+                    )
                   }
 
                   {/*Transmittal Detail*/}
@@ -769,13 +850,13 @@ function EnggJobDetail() {
 
                             <thead>
                               <tr>
-                                <th className="text-center"  style={{ width: "14.5%" }}>File Name</th>
-                                <th className="text-center"  style={{ width: "12.5%" }}>File Type</th>
-                                <th className="text-center"  style={{ width: "12.5%" }}>Size</th>
-                                <th className="text-center"  style={{ width: "12.5%" }}>Last Modified</th>
-                                <th className="text-center"  style={{ width: "12.5%" }}>Page Count	</th>
-                                <th className="text-center"  style={{ width: "12.5%" }}>Revision</th>
-                                <th className="text-center"  style={{ width: "12.5%" }}>Actions</th>
+                                <th className="text-center" style={{ width: "14.5%" }}>File Name</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>File Type</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Size</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Last Modified</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Page Count	</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Revision</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Actions</th>
                               </tr>
                             </thead>
                             < tbody>
@@ -836,14 +917,14 @@ function EnggJobDetail() {
                   <Table bordered id="" className="">
                     <thead>
                       <tr>
-                        <th className="text-center" style={{width:"12.5%"}}>Serial No.</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Department</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Description</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Current Revision</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Last Updated</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Status</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Owner</th>
-                        <th className="text-center" style={{width:"12.5%"}} >Action</th>
+                        <th className="text-center" style={{ width: "12.5%" }}>Serial No.</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Department</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Description</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Current Revision</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Last Updated</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Status</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Owner</th>
+                        <th className="text-center" style={{ width: "12.5%" }} >Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -852,13 +933,13 @@ function EnggJobDetail() {
                           key={index}
                           className={getStatusClass(row.status)}
                         >
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.serialNo}</td>
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.department}</td>
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.fileDescription}</td>
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.revision}</td>
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.lastUpdated}</td>
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.status}</td>
-                          <td  className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.owner}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.serialNo}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.department}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.fileDescription}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.revision}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.lastUpdated}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.status}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.owner}</td>
                           <td className="text-center d-flex align-items-center justify-content-center">
                             <Button
                               className="upload-btn text-center d-flex align-items-center justify-content-center"
@@ -917,14 +998,14 @@ function EnggJobDetail() {
                           <Table bordered id="revision-history-table">
                             <thead>
                               <tr>
-                                <th  className="text-center" style={{ width: "10.5%" }}>Rev No</th>
-                                <th  className="text-center" style={{ width: "12.5%" }}>View Sent File</th>
-                                <th  className="text-center" style={{ width: "12.5%" }}>Sent Date</th>
-                                <th  className="text-center" style={{ width: "12.5%" }}>Return File</th>
-                                <th className="text-center"  style={{ width: "14.5%" }}>Comment Code</th>
-                                <th  className="text-center" style={{ width: "12.5%" }}>PM Comment</th>
-                                <th  className="text-center" style={{ width: "12.5%" }}>Return Date</th>
-                                <th  className="text-center" style={{ width: "12.5%" }}>File Status</th>
+                                <th className="text-center" style={{ width: "10.5%" }}>Rev No</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>View Sent File</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Sent Date</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Return File</th>
+                                <th className="text-center" style={{ width: "14.5%" }}>Comment Code</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>PM Comment</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Return Date</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>File Status</th>
                               </tr>
                             </thead>
                             <tbody id="">
@@ -970,7 +1051,7 @@ function EnggJobDetail() {
                     <Modal.Footer>
                       <Button
                         className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                        onClick={()=>setDetailModal(false)}
+                        onClick={() => setDetailModal(false)}
                       >
                         Close
                       </Button>
@@ -998,11 +1079,11 @@ function EnggJobDetail() {
                       <thead>
                         <tr>
                           <th className="text-center" style={{ width: "15%" }}>Revision</th>
-                          <th  className="text-center" style={{ width: "35%" }}>File Hash</th>
-                          <th className="text-center"  style={{ width: "15%" }}>File Date</th>
-                          <th  className="text-center" style={{ width: "10%" }}>Page Count	</th>
-                          <th  className="text-center" style={{ width: "10%" }}>File Size</th>
-                          <th  className="text-center" style={{ width: "10%" }}>Actions</th>
+                          <th className="text-center" style={{ width: "35%" }}>File Hash</th>
+                          <th className="text-center" style={{ width: "15%" }}>File Date</th>
+                          <th className="text-center" style={{ width: "10%" }}>Page Count	</th>
+                          <th className="text-center" style={{ width: "10%" }}>File Size</th>
+                          <th className="text-center" style={{ width: "10%" }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody id="revision-history-body">
@@ -1068,7 +1149,7 @@ function EnggJobDetail() {
                                   request.dueDate
                                 )}`,
                               }}
-                                
+
                             >
                               <div className="request-details p-20">
                                 <p>
@@ -1107,9 +1188,361 @@ function EnggJobDetail() {
 
                 {/*Files Details*/}
 
-                {/* {selectedRequest && ( */}
+                <Modal
+                  show={false}
+                  size="xl"
+                  aria-labelledby="contained-modal-title-vcenter"
+                  centered
+                  onHide={() => setEngMasterlistModal(false)}
+                >
+                  <Modal.Header closeButton>
+                    <Modal.Title id="contained-modal-title-vcenter">
+                      Engineering Masterlist
+                    </Modal.Title>
+                  </Modal.Header>
+
+                  <Modal.Body>
+                    <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
+                    <table className="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>File Desc</th>
+                          <th>Equip Tag</th>
+                          <th>NMR Code</th>
+                          <th>Client Code</th>
+                          <th>Client Doc No.</th>
+                          <th>ZS Doc No.</th>
+                          <th>Planned Date</th>
+                          <th>Owner</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <tr key={index}>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.fileDescription}
+                                onChange={(e) =>
+                                  updateRow(index, "fileDescription", e.target.value)
+                                }
+                                placeholder="File Description"
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.equipmentTag}
+                                onChange={(e) =>
+                                  updateRow(index, "equipmentTag", e.target.value)
+                                }
+                                placeholder="Equipment Tag"
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.nmrCode}
+                                onChange={(e) => updateRow(index, "nmrCode", e.target.value)}
+                                placeholder="NMR Code"
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.clientCode}
+                                onChange={(e) =>
+                                  updateRow(index, "clientCode", e.target.value)
+                                }
+                                placeholder="Client Code"
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.clientDocumentNo}
+                                onChange={(e) =>
+                                  updateRow(index, "clientDocumentNo", e.target.value)
+                                }
+                                placeholder="Client Doc No."
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                value={row.zsDocumentNo}
+                                onChange={(e) =>
+                                  updateRow(index, "zsDocumentNo", e.target.value)
+                                }
+                                placeholder="ZS Doc No."
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="date"
+                                value={row.plannedDate}
+                                onChange={(e) =>
+                                  updateRow(index, "plannedDate", e.target.value)
+                                }
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="email"
+                                value={row.ownerEmail}
+                                onChange={(e) =>
+                                  updateRow(index, "ownerEmail", e.target.value)
+                                }
+                                placeholder="Owner Email"
+                                className="form-control"
+                              />
+                            </td>
+                            <td>
+                              <button
+                                className="btn btn-danger"
+                                onClick={() => deleteRow(index)}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <Button
+                      className="btn rounded-pill radius-8 px-3 py-2 mb-3"
+                      variant="outline-secondary"
+                      onClick={addRow}
+                    >
+                      Add Row
+                    </Button>
+                  </Modal.Body>
+
+                  <Modal.Footer>
+                    <Button
+                      className="btn btn-primary"
+                      onClick={handleSave}
+                    >
+                      {isUpdate ? "Update Masterlist" : "Save Masterlist"}
+                    </Button>
+                    <Button
+                      className="btn btn-danger"
+                      onClick={() => setEngMasterlistModal(false)}
+                    >
+                      Close
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+
+
                 <Modal
                   show={engMasterlistModal}
+                  size="xl"
+                  aria-labelledby="contained-modal-title-vcenter"
+                  centered
+                  onHide={() => setEngMasterlistModal(false)}
+                >
+                  <Modal.Header closeButton>
+                    <Modal.Title id="contained-modal-title-vcenter">
+                      Engineering Masterlist
+                    </Modal.Title>
+                  </Modal.Header>
+
+                  <Modal.Body>
+                    <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
+                    <table className="table table-bordered">
+                      <tbody>
+                        {rows.map((row, index) => (
+                          <td key={index} className="d-flex align-items-center justify-content-evenly flex-wrap">
+                            <td style={{ width:"50%"}}>
+                              <th style={{ width:"20%"}}>File Desc</th>
+                              <td style={{ width:"80%"}}>
+                                <input
+                                  type="text"
+                                  value={row.fileDescription}
+                                  onChange={(e) =>
+                                    updateRow(index, "fileDescription", e.target.value)
+                                  }
+                                  placeholder="File Description"
+                                  className="form-control"
+                                />  
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>Equip Tag</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="text"
+                                  value={row.equipmentTag}
+                                  onChange={(e) =>
+                                    updateRow(index, "equipmentTag", e.target.value)
+                                  }
+                                  placeholder="Equipment Tag"
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>NMR Code</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="text"
+                                  value={row.nmrCode}
+                                  onChange={(e) => updateRow(index, "nmrCode", e.target.value)}
+                                  placeholder="NMR Code"
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>Client Code</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="text"
+                                  value={row.clientCode}
+                                  onChange={(e) =>
+                                    updateRow(index, "clientCode", e.target.value)
+                                  }
+                                  placeholder="Client Code"
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>Client Doc No.</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="text"
+                                  value={row.clientDocumentNo}
+                                  onChange={(e) =>
+                                    updateRow(index, "clientDocumentNo", e.target.value)
+                                  }
+                                  placeholder="Client Doc No."
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>ZS Doc No.</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="text"
+                                  value={row.zsDocumentNo}
+                                  onChange={(e) =>
+                                    updateRow(index, "zsDocumentNo", e.target.value)
+                                  }
+                                  placeholder="ZS Doc No."
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>Planned Date</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="date"
+                                  value={row.plannedDate}
+                                  onChange={(e) =>
+                                    updateRow(index, "plannedDate", e.target.value)
+                                  }
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "50%" }}>
+                              <th style={{ width: "20%" }}>Owner</th>
+                              <td style={{ width: "80%" }}>
+                                <input
+                                  type="email"
+                                  value={row.ownerEmail}
+                                  onChange={(e) =>
+                                    updateRow(index, "ownerEmail", e.target.value)
+                                  }
+                                  placeholder="Owner Email"
+                                  className="form-control"
+                                />
+                              </td>
+                            </td>
+                            <td style={{ width: "20%" }}>
+                              <th>Actions</th>
+                              <td style={{ width: "100%" }}>
+                                <button
+                                  className="btn btn-danger"
+                                  onClick={() => deleteRow(index)}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </td>
+                          </td>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <Button
+                      className="btn rounded-pill radius-8 px-3 py-2 mb-3"
+                      variant="outline-secondary"
+                      onClick={addRow}
+                    >
+                      Add Row
+                    </Button>
+                  </Modal.Body>
+
+                  <Modal.Footer>
+                    <Button
+                      className="btn btn-primary"
+                      onClick={handleSave}
+                    >
+                      {isUpdate ? "Update Masterlist" : "Save Masterlist"}
+                    </Button>
+                    <Button
+                      className="btn btn-danger"
+                      onClick={() => setEngMasterlistModal(false)}
+                    >
+                      Close
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                {/* {selectedRequest && ( */}
+                <Modal
+                  show={false}
                   size="lg"
                   aria-labelledby="contained-modal-title-vcenter"
                   centered
@@ -1325,7 +1758,7 @@ function EnggJobDetail() {
                               <td className="text-center">{file.ownerEmail || "N/A"}</td>
                               <td className="text-center">
                                 <Button className="upload-btn"
-                                 onClick={() => uploadFile(index)}
+                                  onClick={() => uploadFile(index)}
                                   variant="outline-secondary"
                                 >
                                   Upload
