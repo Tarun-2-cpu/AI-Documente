@@ -9,6 +9,8 @@ import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Form from 'react-bootstrap/Form';
 import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom'
+import * as pdfjsLib from "pdfjs-dist/webpack";
+import { getDocument } from "pdfjs-dist";
 
 
 function JobDetail() {
@@ -30,13 +32,16 @@ function JobDetail() {
   const [jobName, setJobName] = useState('');
   const [description, setDescription] = useState('');
   const [poNumber, setPONumber] = useState('');
+  const [client, setClient] = useState('');
+  const [epc, setEPC] = useState('');
+  const [endUser, setEndUser] = useState('');
   const [poDate, setPoDate] = useState('');
   const [jobNotFound, setJobNotFound] = useState(false);
   const [incomingDocs, setIncomingDocs] = useState([]);
   const [summary, setSummary] = useState('');
   const [jobs, setJobs] = useState(JSON.parse(localStorage.getItem('jobs')) || []);
 
-  const[currentJob, setCurrentJob] = useState('');
+  const [currentJob, setCurrentJob] = useState('');
 
   //transmittal
   const [files, setFiles] = useState([]); // Files data with revisions
@@ -69,7 +74,7 @@ function JobDetail() {
 
   const fileInputRef = useRef(null);
 
-  
+
   useEffect(() => {
     const jobId = getQueryParam('jobId');
     localStorage.setItem('currentJobId', jobId);
@@ -77,12 +82,16 @@ function JobDetail() {
     const job = jobs.find((j) => j.jobId === jobId);
 
     if (job) {
+      console.log(job)
       setCurrentJob(job);
       setJobID(job.jobId);
       setJobName(job.jobName);
       setIncomingDocs(job.incomingDocs || []);
       setDescription(job.description);
       setPONumber(job.poNumber);
+      setClient(job.client);
+      setEPC(job.epc);
+      setEndUser(job.endUser);
       setPoDate(job.poDate);
       setTransmittals(job.transmittals || []);
 
@@ -116,7 +125,7 @@ function JobDetail() {
 
       console.log(job);
       console.log(selectedSrNo);
-      
+
       if (currentJob) {
         const file = currentJob.incomingDocs.find((doc) => doc.srNo === selectedSrNo);
         if (file) {
@@ -137,7 +146,7 @@ function JobDetail() {
 
 
   // Handle file upload (the file I upload here gets deleted when I create transmittal check the potential issues)
-  
+
   const handleFileUpload = (event) => {
     console.log("File upload event triggered:", event.target.files);
 
@@ -154,29 +163,29 @@ function JobDetail() {
     if (!job) {
       console.error('Job not found!');
       return;
-    }  
+    }
 
     console.log(jobId);
     console.log(jobs);
     console.log(job);
 
-    
 
     let newDocs = [...job.incomingDocs || []];
 
-    console.log("new docs", newDocs); 
+    console.log("new docs", newDocs);
     console.log('State updated with incomingDocs:', newDocs);
 
     Array.from(files).forEach((file) => {
       const srNo = `ZE-DOC-${jobID}-${newDocs.length + 1}`;
       const fileType = file.name.split('.').pop().toLowerCase();
+
       const fileDetails = {
         srNo,
         fileName: file.name,
         fileType,
         fileSize: formatFileSize(file.size),
         lastModified: new Date(file.lastModified).toLocaleDateString(),
-        pageCount: fileType === 'pdf' ? 'Getting page count...' : 'N/A',
+        pageCount: fileType === 'pdf' ? 'Getting page count...' : '1 Page',
         revision: 0, // Start revision count at 0
         revisions: [
           {
@@ -190,29 +199,52 @@ function JobDetail() {
         fileLink: URL.createObjectURL(file),
       };
 
+      // const fileDetails = {
+      //   srNo,
+      //   fileName: file.name,
+      //   fileType,
+      //   fileSize: formatFileSize(file.size),
+      //   lastModified: new Date(file.lastModified).toLocaleDateString(),
+      //   pageCount: fileType === 'pdf' ? 'Getting page count...' : '1 Page',
+      //   revision: 0,
+      //   revisions: [
+      //     {
+      //       revision: 0,
+      //       hash: generateFileHash(file),
+      //       fileLink: "",
+      //       transmittalId: 'Pending',
+      //       uploadDate: new Date().toLocaleDateString(),
+      //     },
+      //   ],
+      //   fileLink: "",
+      // };
+
+
+
       if (fileType === 'pdf') {
         getPDFPageCount(file, (pageCount) => {
           fileDetails.pageCount = pageCount;
           newDocs.push(fileDetails);
-          setIncomingDocs([...newDocs]); // Update state with new docs
-          updateJobData(jobId, newDocs, jobs); // Update job data after processing PDF
+          setIncomingDocs([...newDocs]);
+          updateJobData(jobId, newDocs, jobs);
         });
       } else {
         newDocs.push(fileDetails);
         setIncomingDocs([...newDocs]); // Update state with new docs
+        updateJobData(jobId, newDocs, jobs);
       }
     });
-
     setIncomingDocs(newDocs); // React state
     updateJobData(jobId, newDocs, jobs);
   };
 
-  function updateJobData (jobId, newDocs, jobs){
+  function updateJobData(jobId, newDocs, jobs) {
     const jobIndex = jobs.findIndex(j => j.jobId === jobId);
     if (jobIndex !== -1) {
       // Update the job's incomingDocs while preserving other job details
       jobs[jobIndex] = { ...jobs[jobIndex], incomingDocs: newDocs };
       localStorage.setItem('jobs', JSON.stringify(jobs));
+      console.log("247, Jobs Size:", JSON.stringify(jobs).length);
       console.log('Updated job data saved to localStorage:', jobs[jobIndex]);
     }
   }
@@ -244,33 +276,100 @@ function JobDetail() {
     if (jobIndex !== -1) {
       jobs[jobIndex] = updatedJob;
       localStorage.setItem('jobs', JSON.stringify(jobs));
+      console.log("279,Jobs Size:", JSON.stringify(jobs).length);
     }
   };
 
   // Function to render a document row in the table
-  
+
   const getPDFPageCount = (file, callback) => {
     const reader = new FileReader();
     reader.onload = function () {
-      // const typedArray = new Uint8Array(reader.result);
+      const typedArray = new Uint8Array(reader.result);
+      pdfjsLib.getDocument(typedArray).promise
+        .then((pdf) => {
+          callback(`${pdf.numPages}`);
+        })
+        .catch((error) => {
+          console.error("Error getting PDF page count:", error);
+          callback("Unknown Pages");
+        });
     };
     reader.readAsArrayBuffer(file);
   };
 
   // Open modal when a row in the table is clicked fine name clicked
+
+  // function openAdditionalFieldsModal(srNo) {
+  //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   console.log("alll jobs:", jobs);
+  //   const jobId = getQueryParam('jobId');
+  //   const job = jobs.find(j => j.jobId === jobId);
+
+  //   console.log("open additional field modal",  jobs);
+
+  //   console.log(jobs);
+
+  //   console.log(jobId);
+
+  //   console.log(job);
+
+  //   if (!job) {
+  //     console.error(`No job found for jobId: ${jobId}`);
+  //     alert(`No job found for jobId: ${jobId}`);
+  //     return;
+  //   }
+
+  //   const file = job.incomingDocs.find(doc => doc.srNo === srNo);
+  //   if (!file) {
+  //     Swal.fire('Error', 'File not found.', 'error');
+  //     return;
+  //   }
+
+  //   console.log(file);
+
+  //   // Use the file link from the latest revision
+  //   const latestRevision = file.revisions[file.revisions.length - 1];
+
+  //   if (!latestRevision) {
+  //     Swal.fire('Error', 'No file revisions found.', 'error');
+  //     return;
+  //   } 
+
+  //   const fileLink = latestRevision.fileLink;
+  //   console.log("Latest Revision File Link before fix:", fileLink);
+
+
+
+  //   if (!fileLink.startsWith("blob:") && !fileLink.startsWith("http")) {
+  //     fileLink = URL.createObjectURL(latestRevision.file);
+  //   }
+
+  //   console.log("Final File Link:", fileLink);
+
+
+  //   setModalData({
+  //     fileName: file.fileName,
+  //     clientCode: file.clientCode || '',
+  //     fileDescription: file.fileDescription || '',
+  //     clientDocNo: file.clientDocNo || '',
+  //     docType: file.docType || 'GA',
+  //     fileLink:fileLink,//mmmm
+  //     preview: renderFilePreview(file.fileType,fileLink)
+  //   });
+
+  //   console.log("Latest Revision File Link: LINE:327", fileLink); // Debugging
+
+
+  //   // Display the modal
+  //   setFileDetailModal(true);
+  // }
+
+
   function openAdditionalFieldsModal(srNo) {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    console.log("alll jobs:", jobs);
     const jobId = getQueryParam('jobId');
     const job = jobs.find(j => j.jobId === jobId);
-
-    console.log("open additional field modal",  jobs);
-
-    console.log(jobs);
-
-    console.log(jobId);
-
-    console.log(job);
 
     if (!job) {
       console.error(`No job found for jobId: ${jobId}`);
@@ -284,21 +383,50 @@ function JobDetail() {
       return;
     }
 
-    console.log(file);
+    // Get latest file revision
+    const latestRevision = file.revisions[file.revisions.length - 1];
 
-    // Pre-fill form fields in the modal
+    if (!latestRevision) {
+      Swal.fire('Error', 'No file revisions found.', 'error');
+      return;
+    }
+
+    // Ensure fileLink is set correctly
+    let fileLink = latestRevision.fileLink;
+    console.log("396, Latest Revision File Link before fix:", fileLink);
+    console.log("397, Latest Revision File", latestRevision.file);
+
+    // if (!fileLink.startsWith("blob:") && !fileLink.startsWith("http")) {
+    //   fileLink = URL.createObjectURL(latestRevision.file);
+    // }
+
+    if (!latestRevision.file) {
+      console.error("⚠️ latestRevision.file is undefined! Possible issue in data saving.");
+    } else if (!(latestRevision.file instanceof Blob)) {
+      console.error("⚠️ latestRevision.file is not a Blob. Received:", latestRevision.file);
+    } else {
+      fileLink = URL.createObjectURL(latestRevision.file);
+    }
+    
+
+    console.log("Final File Link:", fileLink);
+
+    // Update modal state
     setModalData({
       fileName: file.fileName,
       clientCode: file.clientCode || '',
       fileDescription: file.fileDescription || '',
       clientDocNo: file.clientDocNo || '',
       docType: file.docType || 'GA',
-      preview: renderFilePreview(file.fileType, file.revisions[file.revisions.length - 1]?.fileLink),
+      fileLink: fileLink,
+      preview: renderFilePreview(file.fileType, fileLink, file.fileName),
     });
 
-    // Display the modal
     setFileDetailModal(true);
   }
+
+
+
 
   // Close the modal
   const closeAdditionalFieldsModal = () => {
@@ -308,7 +436,7 @@ function JobDetail() {
 
   // Save additional fields and update session storage
   const saveAdditionalFields = () => {
-    
+
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const jobId = localStorage.getItem('currentJobId');
     const job = jobs.find(j => j.jobId === jobId);
@@ -330,6 +458,7 @@ function JobDetail() {
 
       // Update localStorage
       localStorage.setItem('jobs', JSON.stringify(jobs));
+      console.log("451, Jobs Size:", JSON.stringify(jobs).length);
 
       alert('Additional fields saved successfully.');
       closeAdditionalFieldsModal();
@@ -354,7 +483,7 @@ function JobDetail() {
     console.log("Retrieved jobs array:", jobs);
 
     const job = jobs.find((j) => j.jobId === jobId);
-    
+
     if (!job) {
       console.error("Error: Job or incomingDocs not found");
       showErrorAlert("Job not found.");
@@ -362,7 +491,7 @@ function JobDetail() {
     }
 
     const file = job.incomingDocs.find((doc) => doc.srNo === srNo);
-    
+
     if (!file || !file.revisions) {
       console.error("Error: File or revisions not found");
       showErrorAlert("File or revisions not found.");
@@ -399,22 +528,105 @@ function JobDetail() {
     openRevisionModal(jobId, srNo)
   };
 
-  const renderFilePreview = (fileType, fileLink) => {
-    switch (fileType.toLowerCase()) {
-      case 'pdf':
-        return <img src={fileLink} style={{ maxWidth: '100%', height: 'auto' }} alt=""/>;
-        case 'jpg':
-          break;
-      case 'jpeg':
-        break;
-      case 'png':
-        break;
-      case 'gif':
-        return <img src={fileLink} style={{ maxWidth: '100%', height: 'auto' }} alt=""/>;
-      default:
-        return <p>Preview not available for this file type.</p>;
+  // const renderFilePreview = (fileType, fileLink) => {
+
+  //   if (!fileLink) return <p>No preview available.</p>;
+
+  //   const lowerFileType = fileType.toLowerCase();
+  //   console.log("Latest Revision File Link: LINE:431", fileLink);
+
+  //   if (['jpg', 'jpeg', 'png', 'gif'].includes(lowerFileType)) {
+
+  //     return <img src={fileLink} alt="preview" style={{ maxWidth: '100%', height: 'auto' }} />;
+
+  //   } else if (lowerFileType === 'pdf') {
+  //     return (
+  //       <iframe
+  //         src={fileLink}
+  //         title="PDF Preview"
+  //         style={{ width: '100%', height: '500px', border: 'none' }}
+  //       />
+  //     );
+  //   } else if (lowerFileType === 'txt') {
+  //     return (
+  //       TextFilePreview(fileLink)
+  //       // <iframe
+  //       //   src={fileLink}
+  //       //   title="Text File Preview"
+  //       //   style={{ width: '100%', height: '500px', border: 'none' }}
+  //       // ></iframe>
+  //     );
+  //   } else {
+  //     return (
+  //       <p>
+  //         Preview not available for this file type.{' '}
+  //         <button onClick={() => downloadFile(fileLink)} style={{ color: 'blue', background: 'none', border: 'none', cursor: 'pointer' }}>
+  //           Click here to download.
+  //         </button>
+  //       </p>
+  //     );
+  //   }
+  // };
+
+
+  const renderFilePreview = (fileType, fileLink, fileName) => {
+    if (!fileLink) return <p>No preview available.</p>;
+
+    const lowerFileType = fileType.toLowerCase();
+
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(lowerFileType)) {
+      return <img src={fileLink} alt="Preview" style={{ maxWidth: '100%', height: 'auto' }} />;
+    }
+    else if (lowerFileType === 'pdf') {
+      return (
+        <iframe
+          src={fileLink}
+          title="PDF Preview"
+          style={{ width: '100%', height: '500px', border: 'none' }}
+        />
+      );
+    }
+    else if (lowerFileType === 'txt') {
+      // Fetch text file content
+      return TextFilePreview (fileLink);
+    }
+    else {
+      return (
+        <p>
+          Preview not available for this file type.{' '}
+          <button onClick={() => downloadFile(fileLink, fileName)} style={{ color: 'blue', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Click here to download.
+          </button>
+        </p>
+      );
     }
   };
+
+
+
+  const downloadFile = (fileLink, fileName) => {
+    const link = document.createElement("a");
+    link.href = fileLink;
+    link.download = fileName || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
+  const TextFilePreview = ({ fileUrl }) => {
+    const [content, setContent] = useState("");
+
+    useEffect(() => {
+      fetch(fileUrl)
+        .then(response => response.text())
+        .then(data => setContent(data))
+        .catch(error => console.error("Error fetching text file:", error));
+    }, [fileUrl]);
+
+    return <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{content}</pre>;
+  };
+
 
   // Upload a new revision.
   const uploadNewRevision = async () => {
@@ -424,7 +636,7 @@ function JobDetail() {
     try {
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = '*'; // Accept all file types.
+      input.accept = '*';
 
       input.onchange = async (event) => {
         const file = event.target.files[0];
@@ -432,7 +644,7 @@ function JobDetail() {
           Swal.fire('Error', 'No file selected!', 'error');
           return;
         }
-
+        console.log(file)
         const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
         const job = jobs.find((j) => j.jobId === selectedJobId);
 
@@ -448,11 +660,17 @@ function JobDetail() {
         }
 
         // Generate new revision
+
+        const revisionNumber = (doc.revisions?.length || 0) + 1;
+        const prefix = 'DOC';
+        const transmittalId = `${prefix}-${revisionNumber.toString().padStart(2, '0')}`;
+
         const newRevision = {
           revision: (doc.revisions?.length || 0),
+          fileName: doc.revisions?.length === 0 ? modalData.fileName : file.name,
           hash: await generateFileHash(file),
           fileLink: URL.createObjectURL(file),
-          transmittalId: 'Pending',
+          transmittalId: transmittalId,
           uploadDate: new Date().toLocaleDateString(),
         };
 
@@ -462,12 +680,15 @@ function JobDetail() {
 
         // Save updated data to localStorage
         localStorage.setItem('jobs', JSON.stringify(jobs));
+        console.log("673 Jobs Size:", JSON.stringify(jobs).length);
 
         // Update modal data
         setModalData((prevData) => ({
           ...prevData,
           revisions: [...prevData.revisions, newRevision],
         }));
+
+        console.log("modalData:", modalData)
 
         // Update incomingDocs state to reflect changes in the main table
         setIncomingDocs((prevDocs) =>
@@ -582,17 +803,18 @@ function JobDetail() {
         revision.transmittalID = transmittalID;
       }
     });
-  
+
     const updatedJobs = jobs.map((j) =>
       j.jobId === jobID
         ? { ...j, transmittals: [...(j.transmittals || []), newTransmittal], incomingDocs: updatedIncomingDocs }
         : j
     );
-  
+
     localStorage.setItem("jobs", JSON.stringify(updatedJobs));
+    console.log("804 Jobs Size:", JSON.stringify(updatedJobs).length);
     setJobs(updatedJobs);
     setTransmittals([...job.transmittals, newTransmittal]);
-  
+
     setSummary("");
     setFiles([]);
     setCreateNewTransmittal(false);
@@ -604,7 +826,7 @@ function JobDetail() {
     }
   };
 
-  function viewTransmittalDetails(date) {
+  function viewTransmittalDetails(date, id) {
     const jobsData = localStorage.getItem("jobs");
     if (!jobsData) {
       console.error("Jobs data not found in localStorage.");
@@ -619,7 +841,7 @@ function JobDetail() {
     }
 
     const job = jobs.find((j) => j.jobId === jobId);
-    
+
     if (!job) {
       console.error(`Job with ID ${jobId} not found.`);
       return alert("Job not found.");
@@ -628,7 +850,7 @@ function JobDetail() {
     const transmittal = job.transmittals?.find((t) => t.date === date);
 
     console.log(transmittal);
-    
+
     if (!transmittal) {
       console.error(`Transmittal for date ${date} not found.`);
       return alert("Transmittal not found.");
@@ -638,6 +860,7 @@ function JobDetail() {
     setTransmittalDetails({
       date: transmittal.date,
       summary: transmittal.summary,
+      id: transmittal.id,
       jobDetails: {
         jobId: job.jobId,
         jobName: job.jobName,
@@ -653,8 +876,8 @@ function JobDetail() {
           name: file.fileName,
           type: file.fileType,
           size: file.fileSize,
-          modified:file.lastModified,
-          count:file.pageCount,
+          modified: file.lastModified,
+          count: file.pageCount,
           revision: file.revision,
           fileLink: file.fileLink,
         };
@@ -664,7 +887,7 @@ function JobDetail() {
     setTransmittalDetailModal(true);
   }
 
-  if(transmittalDetails){
+  if (transmittalDetails) {
     console.log(transmittalDetails);
   }
 
@@ -724,6 +947,7 @@ function JobDetail() {
 
       // Update localStorage
       localStorage.setItem("jobs", JSON.stringify(jobs));
+      console.log("940 Jobs Size:", JSON.stringify(jobs).length);
 
       // Update state with the modified transmittals
       setTransmittals([...job.transmittals]);
@@ -734,15 +958,14 @@ function JobDetail() {
     setNotifyModal(false);
   };
 
-    
-    
-    const getCurrentJob = () => {
-      const jobId = new URLSearchParams(window.location.search).get("jobId");
-      const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-      return jobs.find((j) => j.jobId === jobId) || null;
-    };
 
-  
+  const getCurrentJob = () => {
+    const jobId = new URLSearchParams(window.location.search).get("jobId");
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    return jobs.find((j) => j.jobId === jobId) || null;
+  };
+
+
 
   return (
     <MasterLayout>
@@ -780,14 +1003,14 @@ function JobDetail() {
                               <td><h6>: {description}</h6></td>
                             </tr>
                             <tr>
-                              <th><h6>PO Number </h6></th>
+                              <th><h6>Client </h6></th>
                               <td></td>
-                              <td><h6>: {poNumber}</h6></td>
+                              <td><h6>: {client}</h6></td>
                             </tr>
                             <tr>
-                              <th><h6>PO Date </h6></th>
+                              <th><h6>End User </h6></th>
                               <td></td>
-                              <td><h6>: {poDate}</h6></td>
+                              <td><h6>: {endUser}</h6></td>
                             </tr>
                           </tbody>
                         </table>
@@ -925,18 +1148,20 @@ function JobDetail() {
             <Table bordered id="revision-history-table">
               <thead>
                 <tr>
-                  <th style={{ width: "25%" , textAlign : "center" }}>Revision</th>
-                  <th style={{ width: "25%" , textAlign : "center" }}>Hash</th>
-                  <th style={{ width: "25%" , textAlign : "center" }}>Actions</th>
-                  <th style={{ width: "25%" , textAlign : "center" }}>Transmittal ID</th>
+                  <th style={{ width: "25%", textAlign: "center" }}>Revision</th>
+                  <th style={{ width: "25%", textAlign: "center" }}>Name</th>
+                  <th style={{ width: "25%", textAlign: "center" }}>Actions</th>
+                  <th style={{ width: "25%", textAlign: "center" }}>Transmittal ID</th>
                 </tr>
               </thead>
-              <tbody id="revision-history-body">
+              <tbody id="revision-history-body">{/*mmmm */}
                 {Array.isArray(modalData.revisions) && modalData.revisions.length > 0 ? (
                   modalData.revisions.map((revision, index) => (
                     <tr key={index}>
                       <td className="text-center">{revision.revision}</td> {/* Display revision count from the object */}
-                      <td className="text-center">{typeof revision.hash === "string" ? revision.hash : "Invalid Hash"}</td>
+                      <td className="text-center">
+                        {index === 0 ? modalData.fileName : revision.fileName ? revision.fileName : "N/A"}
+                      </td>
                       <td className="text-center">
                         {typeof revision.fileLink === "string" ? (
                           <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer">
@@ -946,7 +1171,8 @@ function JobDetail() {
                           "No File Link"
                         )}
                       </td>
-                      <td className="text-center">{typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
+                      <td className="text-center">{index === 0 ? "DOC-1" : typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
+
                     </tr>
                   ))
                 ) : (
@@ -1051,7 +1277,7 @@ function JobDetail() {
 
             <div className="filePreviewContainer">
               <h5 className="text-secondary">File Preview: </h5>
-              <div id="filePreview" style={{ border: "1px solid #ccc", width: "100%", height: "500px", padding: "30px" }}>
+              <div id="filePreview" style={{ border: "1px solid #ccc", width: "100%", height: "500px" }}>
                 {modalData.preview}
               </div>
             </div>
@@ -1098,16 +1324,17 @@ function JobDetail() {
               <tbody id="transmittalsBody">
                 {transmittals.map((transmittal) => (
                   <tr key={transmittal.id} className="text-center align-middle">
-                    <td onClick={() => viewTransmittalDetails(transmittal.date)}>{transmittal.id}</td>
-                    <td onClick={() => viewTransmittalDetails(transmittal.date)}>{transmittal.date}</td>
-                    <td onClick={() => viewTransmittalDetails(transmittal.date)}>{transmittal.summary}</td>
+                    <td onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}>{transmittal.id}</td>
+                    <td onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}>{transmittal.date}</td>
+                    <td onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}>{transmittal.summary}</td>
                     <td>{transmittal.notifiedDepartments?.join(', ') || 'None'}</td>
                     <td>
                       <button
-                        className="notify-btn btn rounded-pill btn btn-outline-primary text-primary-600 radius-8 px-3 py-2"
+                        className="notify-btn btn rounded-pill btn btn-outline-primary text-primary-600 radius-8 px-1 py-2"
                         onClick={() => openNotifyModal(transmittal.id)}
+                        disabled={transmittal.notifiedDepartments.length > 0}
                       >
-                        Send Transmittal
+                        {transmittal.notifiedDepartments.length > 0 ? "Sent" : "Send Transmittal"}
                       </button>
                     </td>
                   </tr>
@@ -1116,8 +1343,8 @@ function JobDetail() {
             </Table>
 
             <Button
-                className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-5 py-3 create-transmittal-button"
-                onClick={() => openCreateTransmittalModal()}
+              className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-5 py-3 create-transmittal-button"
+              onClick={() => openCreateTransmittalModal()}
             >
 
               Create New Transmittal
@@ -1193,7 +1420,7 @@ function JobDetail() {
                                   )
                                 }
                               >
-                                {file.revisions.map((rev) => (
+                                {file.revisions.reverse().map((rev) => (
                                   <option key={rev} value={rev}>
                                     Rev {rev}
                                   </option>
@@ -1243,14 +1470,18 @@ function JobDetail() {
                     <div className="transmittal-info">
                       <Table>
                         <tbody>
-                            <tr>
-                              <th>Date:</th>
-                              <td>{transmittalDetails.date}</td>
-                            </tr>
-                            <tr>
-                              <th>Summary/Comments:</th>
-                              <td>{transmittalDetails.summary}</td>
-                            </tr>
+                          <tr>
+                            <th>Date:</th>
+                            <td>{transmittalDetails.date}</td>
+                          </tr>
+                          <tr>
+                            <th>Summary/Comments:</th>
+                            <td>{transmittalDetails.summary}</td>
+                          </tr>
+                          <tr>
+                            <th>Transmittal ID:</th>
+                            <td>{transmittalDetails.id}</td>
+                          </tr>
                         </tbody>
                       </Table>
                     </div>
@@ -1276,11 +1507,11 @@ function JobDetail() {
                             </tr>
                             <tr>
                               <th>EPC:</th>
-                              <td>{transmittalDetails.jobDetails.epc}</td>
+                              <td>{transmittalDetails.jobDetails.epc ? transmittalDetails.jobDetails.epc : "N/A"}</td>
                             </tr>
                             <tr>
                               <th>End User:</th>
-                              <td>{transmittalDetails.jobDetails.endUser}</td>
+                              <td>{transmittalDetails.jobDetails.endUser ? transmittalDetails.jobDetails.endUser : "N/A"}</td>
                             </tr>
                           </tbody>
                         </Table>
@@ -1312,7 +1543,7 @@ function JobDetail() {
                               <td>{file.pageCount}</td>
                               <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
                               <td>
-                                <Link to={file.fileLink} download={file.fileName} target="_blank" rel="noopener noreferrer">
+                                <Link to={file.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                   View
                                 </Link>
                               </td>
@@ -1374,7 +1605,7 @@ function JobDetail() {
                         ["MP", "Material Planning"],
                         ["MFG", "Manufacturing"],
                       ].map(([value, label], index) => (
-                        <tr key={index} style={{width: "45%" , margin:"10px"}}>
+                        <tr key={index} style={{ width: "45%", margin: "10px" }}>
                           <td colSpan={2}>
                             <label className="d-flex align-items-center justify-content-between mx-3 gap-2">
                               <input
@@ -1398,7 +1629,7 @@ function JobDetail() {
                 <Button
                   className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
                   onClick={handleSave}>
-                  Save
+                  Notify
                 </Button>
                 <Button
                   className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"

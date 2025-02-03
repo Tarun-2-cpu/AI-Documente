@@ -7,6 +7,7 @@ import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
 import Swal from 'sweetalert2';
 import Form from 'react-bootstrap/Form';
+import { Link } from 'react-router-dom';
 
 
 function PmJobDetail() {
@@ -366,7 +367,7 @@ function PmJobDetail() {
                             <th>NMR Code</th>
                             <th>Client Code</th>
                             <th>Client Document No.</th>
-                            <th>ZS Document No.</th>
+                            <th>Company Doc No.</th>
                             <th>Revision</th>
                             <th>Planned Date</th>
                             <th>Owner</th>
@@ -546,14 +547,14 @@ function PmJobDetail() {
                               <td><h6>: {currentJob?.description || "N/A"}</h6></td>
                             </tr>
                             <tr>
-                              <th><h6>PO Number</h6></th>
+                              <th><h6>Client</h6></th>
                               <td></td>
-                              <td><h6>: {currentJob?.poNumber || "N/A"}</h6></td>
+                              <td><h6>: {currentJob?.client || "N/A"}</h6></td>
                             </tr>
                             <tr>
-                              <th><h6>PO Date</h6></th>
+                              <th><h6>End User</h6></th>
                               <td></td>
-                              <td><h6>: {currentJob?.poDate || "N/A"}</h6></td>
+                              <td><h6>: {currentJob?.endUser || "N/A"}</h6></td>
                             </tr>
                           </tbody>
                         </table>
@@ -716,7 +717,7 @@ function PmJobDetail() {
                             </tr>
                             <tr>
                               <th>Sent to:</th>
-                              <td className="pl-5">{transmittal.notifiedDepartments}</td>
+                              <td className="pl-5">{transmittal.notifiedDepartments.join(' / ')}</td>
                             </tr>
                             <tr>
                               <th>Date:</th>
@@ -807,9 +808,9 @@ function PmJobDetail() {
                                         <td>{doc.pageCount}</td>
                                         <td>Rev {file.revision}</td>
                                         <td>
-                                          <a href={file.fileLink} target="_blank" rel="noopener noreferrer">
+                                          <Link to={doc.fileLink} target="_blank" rel="noopener noreferrer">
                                             View
-                                          </a>
+                                          </Link>
                                         </td>
                                       </tr>
                                     )
@@ -1224,7 +1225,7 @@ function PmJobDetail() {
                             <th style={{width : "10%"}} >NMR Code	</th>
                             <th style={{width : "10%"}} >Client Code	</th>
                             <th style={{width : "10%"}} >Client Document No.	</th>
-                            <th style={{width : "10%"}} >ZS Document No.	</th>
+                            <th style={{width : "10%"}} >Company Doc No.</th>
                             <th style={{width : "10%"}} >Revision	</th>
                             <th style={{width : "10%"}} >Planned Date	</th>
                             <th style={{width : "10%"}} >Owner</th>

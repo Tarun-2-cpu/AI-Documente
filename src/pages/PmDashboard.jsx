@@ -290,7 +290,8 @@ function PmDashboard() {
                       <div className="mt-3 d-flex flex-wrap justify-content-between align-items-center gap-1">
                         <div className="">
                           <h6 className="mb-8 text-lg">PO Number: {job.poNumber}</h6>
-                          <h6 className="mb-8 text-sm fw-medium text-secondary-light">PO Date: {job.poDate}</h6>
+                          <h6 className="mb-8 text-lg">Client: {job.client}</h6>
+                          <h6 className="text-success-main text-sm mb-8">PO Date: {job.poDate}</h6>
                         </div>
                       </div>
                     </div>

@@ -15,6 +15,10 @@ function BDDashboard() {
   const [poDate, setPoDate] = useState('');
   const [jobs, setJobs] = useState([]);
   const [file, setFile] = useState('');
+  const [client, setClient] = useState('');
+  const [epc, setEPC] = useState('');
+  const [endUser, setEndUser] = useState('');
+  
 
   const navigate = useNavigate();
 
@@ -30,7 +34,7 @@ function BDDashboard() {
 
   function createJob() {
 
-    if (!jobId || !jobName || !poNumber || !poDate) {
+    if (!jobId || !jobName || !poNumber || !poDate || !file || !client || !epc || !endUser) {
       alert('Please fill out all required fields!');
       return;
     }
@@ -55,7 +59,10 @@ function BDDashboard() {
       poNumber,
       poDate,
       incomingDocs: [],
-      transmittals: []
+      transmittals: [],
+      client,
+      epc,
+      endUser
     };
 
     const updateJobs = [...jobs, newJob];
@@ -71,12 +78,22 @@ function BDDashboard() {
     setDescription('');
     setPoNumber('');
     setPoDate('');
+    setFile('');
+    setClient('');
+    setEPC('');
+    setEndUser('');
   };
 
 
   const handleJobClick = (jobId) => {
     navigate(`/job-detail?jobId=${jobId}`);
   };  
+
+  const handleDateChange = (e) => {
+    let rawDate = e.target.value; // YYYY-MM-DD format
+    let formattedDate = rawDate.split('-').reverse().join('/'); // Converts to DD/MM/YYYY
+    setPoDate(formattedDate);
+  };
 
   return (
     <MasterLayout>
@@ -211,7 +228,7 @@ function BDDashboard() {
                         <div className="">
                           <label className="" id="">PO Date</label>
                         </div>
-                        <input type="date" className="form-control mb-3" value={poDate} onChange={(e) => setPoDate(e.target.value)} />
+                        <input type="date" className="form-control mb-3" value={poDate.split('/').reverse().join('-')} onChange={handleDateChange} />
                       </div>
 
                       <div className="mb-3">
@@ -234,21 +251,21 @@ function BDDashboard() {
                         <div className="">
                           <label className="" id="">Client</label>
                         </div>
-                        <input type="text" className="form-control" id="client" placeholder="Aramco" />
+                        <input type="text" className="form-control" value={client} onChange={(e)=> setClient(e.target.value)} id="client" placeholder="Aramco" />
                       </div>
 
                       <div className="mb-3">
                         <div className="">
                           <label className="" id="">EPC</label>
                         </div>
-                        <input type="text" className="form-control" id="epc" placeholder="EPC#001" />
+                        <input type="text" className="form-control" value={epc} onChange={(e)=>setEPC(e.target.value)} id="epc" placeholder="EPC#001" />
                       </div>
 
                       <div className="mb-3">
                         <div className="">
                           <label className="" id="">End User</label>
                         </div>
-                        <input type="text" className="form-control" id="endUser" placeholder='EU#123' />
+                        <input type="text" className="form-control" value={endUser} onChange={(e)=>setEndUser(e.target.value)} id="endUser" placeholder='EU#123' />
                       </div>
                     </div>
                     <div className="modal-footer">
@@ -258,7 +275,8 @@ function BDDashboard() {
                   </div>
                 </div>
               </div>
-            )}
+            )
+          }
         </div>
         <div className="card-body p-24">
           <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4">
@@ -279,7 +297,9 @@ function BDDashboard() {
                         <div className="mt-3 d-flex flex-wrap justify-content-between align-items-center gap-1">
                           <div className="">
                             <h6 className="mb-8 text-lg">PO Number: {job.poNumber}</h6>
+                            <h6 className="mb-8 mt-[100px] text-lg">Client: {job && job.client ? job.client:'N/A'}</h6>
                             <h6 className="mb-8 text-sm fw-medium text-secondary-light">PO Date: {job.poDate}</h6>
+
                             <span className="text-success-main text-md">Status: Job Created</span>
                           </div>
                           

@@ -6,6 +6,7 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
 import ModalDialog from 'react-bootstrap/ModalDialog'
+import { Link } from 'react-router-dom';
 
 
 
@@ -183,28 +184,28 @@ function EnggJobDetail() {
       plannedDate: "",
       ownerEmail: "",
     };
-  
+
     const updatedRows = [...rows, newRow];
     setRows(updatedRows);
-  
+
     // Update the masterlist in localStorage
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     const jobId = localStorage.getItem("currentJobId");
     const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
-  
+
     if (jobIndex !== -1) {
       const currentJob = jobs[jobIndex];
       currentJob.masterlist = currentJob.masterlist || {};
       currentJob.masterlist.ENG = updatedRows; // Update the ENG masterlist
       jobs[jobIndex] = currentJob;
-  
+
       // Save back to localStorage
       localStorage.setItem("jobs", JSON.stringify(jobs));
     }
   };
 
 
-  
+
 
 
   const updateRow = (index, field, value) => {
@@ -221,48 +222,48 @@ function EnggJobDetail() {
   // const deleteRow = (index) => {
   //   const updatedRows = rows.filter((_, i) => i !== index);
   //   setRows(updatedRows);
-  
+
   //   // Update the masterlist in localStorage
   //   const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
   //   const jobId = localStorage.getItem("currentJobId");
   //   const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
-  
+
   //   if (jobIndex !== -1) {
   //     const currentJob = jobs[jobIndex];
   //     currentJob.masterlist = currentJob.masterlist || {};
   //     currentJob.masterlist.ENG = updatedRows; // Update the ENG masterlist
   //     jobs[jobIndex] = currentJob;
-  
+
   //     // Save back to localStorage
   //     localStorage.setItem("jobs", JSON.stringify(jobs));
   //   }
   // };
-  
+
 
   const handleSave = () => {
     // Retrieve the existing job data
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     const jobId = localStorage.getItem("currentJobId");
     const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
-  
+
     if (jobIndex === -1) {
       alert("Job not found!");
       return;
     }
-  
+
     // Update the masterlist for the Engineering department
     const currentJob = jobs[jobIndex];
     currentJob.masterlist = currentJob.masterlist || {};
     currentJob.masterlist.ENG = rows;
-  
+
     // Update localStorage
     jobs[jobIndex] = currentJob;
     localStorage.setItem("jobs", JSON.stringify(jobs));
-  
+
     // Close the modal
     setEngMasterlistModal(false);
   };
-  
+
 
   // const handleSave = () => {
 
@@ -683,23 +684,23 @@ function EnggJobDetail() {
                           <tbody>
                             <tr>
                               <th><h6>Job ID</h6></th>
-                              <td style={{ paddingLeft: "20px" }}><strong>: {currentJob ? currentJob.jobId : "N/A"} </strong></td>
+                              <td style={{ paddingLeft: "20px" }}> <h6> : {currentJob ? currentJob.jobId : "N/A"} </h6></td>
                             </tr>
                             <tr>
                               <th><h6>Job Name</h6></th>
-                              <td style={{ paddingLeft: "20px" }}><strong>: {currentJob ? currentJob.jobName : "N/A"} </strong></td>
+                              <td style={{ paddingLeft: "20px" }}> <h6> : {currentJob ? currentJob.jobName : "N/A"} </h6></td>
                             </tr>
                             <tr>
                               <th><h6>Description</h6></th>
-                              <td style={{ paddingLeft: "20px" }}><strong>: {currentJob ? currentJob.description : "N/A"} </strong> </td>
+                              <td style={{ paddingLeft: "20px" }}> <h6> : {currentJob ? currentJob.description : "N/A"} </h6> </td>
                             </tr>
                             <tr>
-                              <th><h6>PO Number</h6></th>
-                              <td style={{ paddingLeft: "20px" }}><strong>: {currentJob ? currentJob.poNumber : "N/A"}  </strong></td>
+                              <th><h6>Client</h6></th>
+                              <td style={{ paddingLeft: "20px" }}> <h6> : {currentJob ? currentJob.client : "N/A"}  </h6></td>
                             </tr>
                             <tr>
-                              <th><h6>PO Date</h6></th>
-                              <td style={{ paddingLeft: "20px" }}><strong>: {currentJob ? currentJob.poDate : "N/A"}  </strong></td>
+                              <th><h6>End User</h6></th>
+                              <td style={{ paddingLeft: "20px" }}> <h6> : {currentJob ? currentJob.endUser : "N/A"}  </h6></td>
                             </tr>
                           </tbody>
                         </table>
@@ -798,6 +799,10 @@ function EnggJobDetail() {
                                   <th>Summary/Comments:</th>
                                   <td>{transmittal.summary}</td>
                                 </tr>
+                                <tr>
+                                  <th>Transmittal Id:</th>
+                                  <td>{transmittal.id}</td>
+                                </tr>
                               </tbody>
                             )
                           }
@@ -872,7 +877,12 @@ function EnggJobDetail() {
                                         <td className="text-center" >{doc.lastModified}</td>
                                         <td className="text-center" >{doc.pageCount}</td>
                                         <td className="text-center" >{doc.revision}</td>
-                                        <td className="text-center" ><a href="${doc.fileLink}" target="_blank">View</a></td>
+                                        <td className="text-center" >
+                                          <Link to={doc.fileLink} target="_blank">View</Link>
+                                          <Link to={doc.fileLink} download={doc.fileName} style={{marginLeft: "12px"}} target="_blank" rel="noopener noreferrer" title="Download">
+                                            <i className="fas fa-download"></i>
+                                          </Link>
+                                        </td>
                                       </tr>
                                     )
                                   })
@@ -1209,7 +1219,7 @@ function EnggJobDetail() {
                           <th>NMR Code</th>
                           <th>Client Code</th>
                           <th>Client Doc No.</th>
-                          <th>ZS Doc No.</th>
+                          <th>Company Doc. No.</th>
                           <th>Planned Date</th>
                           <th>Owner</th>
                           <th>Actions</th>
@@ -1278,7 +1288,7 @@ function EnggJobDetail() {
                                 onChange={(e) =>
                                   updateRow(index, "zsDocumentNo", e.target.value)
                                 }
-                                placeholder="ZS Doc No."
+                                placeholder="Company Doc. No."
                                 className="form-control"
                               />
                             </td>
@@ -1358,132 +1368,132 @@ function EnggJobDetail() {
 
                   <Modal.Body>
                     <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
-                    <Table style={{border : "none"}} className="table table-bordered">
+                    <Table style={{ border: "none" }} className="table table-bordered">
                       {/* <tbody> */}
-                        {rows.map((row, index) => (
-                          <tbody key={index} className="d-flex align-items-center justify-content-evenly flex-wrap">
-                            <td style={{ width:"50%"}}>
-                              <td style={{ width:"20%"}}>File Desc</td>
-                              <td style={{ width:"80%"}}>
-                                <input
-                                  type="text"
-                                  value={row.fileDescription}
-                                  onChange={(e) =>
-                                    updateRow(index, "fileDescription", e.target.value)
-                                  }
-                                  placeholder="File Description"
-                                  className="form-control"
-                                />  
-                              </td>
+                      {rows.map((row, index) => (
+                        <tbody key={index} className="d-flex align-items-center justify-content-evenly flex-wrap">
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>File Desc</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="text"
+                                value={row.fileDescription}
+                                onChange={(e) =>
+                                  updateRow(index, "fileDescription", e.target.value)
+                                }
+                                placeholder="File Description"
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>Equip Tag</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="text"
-                                  value={row.equipmentTag}
-                                  onChange={(e) =>
-                                    updateRow(index, "equipmentTag", e.target.value)
-                                  }
-                                  placeholder="Equipment Tag"
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>Equip Tag</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="text"
+                                value={row.equipmentTag}
+                                onChange={(e) =>
+                                  updateRow(index, "equipmentTag", e.target.value)
+                                }
+                                placeholder="Equipment Tag"
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>NMR Code</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="text"
-                                  value={row.nmrCode}
-                                  onChange={(e) => updateRow(index, "nmrCode", e.target.value)}
-                                  placeholder="NMR Code"
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>NMR Code</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="text"
+                                value={row.nmrCode}
+                                onChange={(e) => updateRow(index, "nmrCode", e.target.value)}
+                                placeholder="NMR Code"
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>Client Code</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="text"
-                                  value={row.clientCode}
-                                  onChange={(e) =>
-                                    updateRow(index, "clientCode", e.target.value)
-                                  }
-                                  placeholder="Client Code"
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>Client Code</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="text"
+                                value={row.clientCode}
+                                onChange={(e) =>
+                                  updateRow(index, "clientCode", e.target.value)
+                                }
+                                placeholder="Client Code"
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>Client Doc No.</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="text"
-                                  value={row.clientDocumentNo}
-                                  onChange={(e) =>
-                                    updateRow(index, "clientDocumentNo", e.target.value)
-                                  }
-                                  placeholder="Client Doc No."
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>Client Doc No.</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="text"
+                                value={row.clientDocumentNo}
+                                onChange={(e) =>
+                                  updateRow(index, "clientDocumentNo", e.target.value)
+                                }
+                                placeholder="Client Doc No."
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>ZS Doc No.</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="text"
-                                  value={row.zsDocumentNo}
-                                  onChange={(e) =>
-                                    updateRow(index, "zsDocumentNo", e.target.value)
-                                  }
-                                  placeholder="ZS Doc No."
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>Company Doc. No.</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="text"
+                                value={row.zsDocumentNo}
+                                onChange={(e) =>
+                                  updateRow(index, "zsDocumentNo", e.target.value)
+                                }
+                                placeholder="Company Doc. No."
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>Planned Date</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="date"
-                                  value={row.plannedDate}
-                                  onChange={(e) =>
-                                    updateRow(index, "plannedDate", e.target.value)
-                                  }
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>Planned Date</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="date"
+                                value={row.plannedDate}
+                                onChange={(e) =>
+                                  updateRow(index, "plannedDate", e.target.value)
+                                }
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "50%" }}>
-                              <td style={{ width: "20%" }}>Owner</td>
-                              <td style={{ width: "80%" }}>
-                                <input
-                                  type="email"
-                                  value={row.ownerEmail}
-                                  onChange={(e) =>
-                                    updateRow(index, "ownerEmail", e.target.value)
-                                  }
-                                  placeholder="Owner Email"
-                                  className="form-control"
-                                />
-                              </td>
+                          </td>
+                          <td style={{ width: "50%" }}>
+                            <td style={{ width: "20%" }}>Owner</td>
+                            <td style={{ width: "80%" }}>
+                              <input
+                                type="email"
+                                value={row.ownerEmail}
+                                onChange={(e) =>
+                                  updateRow(index, "ownerEmail", e.target.value)
+                                }
+                                placeholder="Owner Email"
+                                className="form-control"
+                              />
                             </td>
-                            <td style={{ width: "20%", marginTop: "20px" }}>
-                              <td>Actions</td>
-                              <td style={{ width: "100%" }}>
-                                <button
-                                  className="btn btn-danger"
-                                  onClick={() => deleteRow(index)}
-                                >
-                                  Delete
-                                </button>
-                              </td>
+                          </td>
+                          <td style={{ width: "20%", marginTop: "20px" }}>
+                            <td>Actions</td>
+                            <td style={{ width: "100%" }}>
+                              <button
+                                className="btn btn-danger"
+                                onClick={() => deleteRow(index)}
+                              >
+                                Delete
+                              </button>
                             </td>
-                          </tbody>
-                        ))}
+                          </td>
+                        </tbody>
+                      ))}
                       {/* </tbody> */}
                     </Table>
 
@@ -1632,7 +1642,7 @@ function EnggJobDetail() {
 
                       <div className="mb-3">
                         <div className="">
-                          <label className="">ZS Doc No.</label>
+                          <label className="">Company Doc. No.</label>
                         </div>
                         <div className="">
                           <input type="text"
@@ -1786,3 +1796,8 @@ function EnggJobDetail() {
 }
 
 export default EnggJobDetail
+
+
+
+
+

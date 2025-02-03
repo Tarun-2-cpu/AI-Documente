@@ -164,7 +164,7 @@ function EnggDashboard() {
             {
               jobs.map((job, index) => (
                 <div className="col">
-                  <div className="card shadow-none border bg-gradient-end-3" key={index} onClick={() => redirect(job)}>
+                  <div className="card shadow-none border bg-gradient-end-3" key={index}>
                     <div className="card-body p-20">
                       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div className="flex-grow-1">
@@ -176,7 +176,14 @@ function EnggDashboard() {
                       <div className="mt-3 d-flex flex-wrap justify-content-between align-items-center gap-1">
                         <div className="">
                           <h6 className="mb-8 text-lg">PO Number: {job.poNumber}</h6>
-                          <h6 className="mb-8 text-sm fw-medium text-secondary-light">PO Date: {job.poDate}</h6>
+                          <h6 className="mb-8 text-lg fw-medium text-secondary-light">Client: {job.client}</h6>
+                          <h6 className="text-success-main text-sm mb-8">PO Date: {job.poDate}</h6>
+                          <div className="mt-4 flex justify-end">
+                            <button 
+                              onClick={() => redirect(job)}
+                              className="btn rounded-pill border border-secondary text-secondary radius-8 px-20 py-11 mt-4"
+                            > View </button>
+                          </div>
                         </div>
                       </div>
                     </div>
