@@ -316,10 +316,40 @@ function EnggJobDetail() {
     if (!fileEntry.revisions) {
       fileEntry.revisions = [];
     }
-
+    setRevisions(fileEntry.revisions || []);
     setRevisionModalShow(true);
     setCurrentFileIndex(index);
   }
+
+  // const handleFileUpload = (event) => {
+  //   const file = event.target.files[0];
+  //   if (!file) return;
+
+  //   const newRevision = {
+  //     hash: `hash_${file.name}_${Date.now()}`, // Placeholder for hash generation
+  //     date: new Date().toLocaleDateString(),
+  //     pageCount: estimatePageCount(file), // Replace with your logic
+  //     size: `${(file.size / 1024).toFixed(2)} KB`,
+  //   };
+
+  //   const updatedRevisions = [...revisions, newRevision];
+  //   setRevisions(updatedRevisions);
+
+  //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   const jobIndex = jobs.findIndex((job) => job.jobId === currentJob.jobId);
+
+
+  //   if (jobIndex !== -1) {
+  //     const updatedJobs = [...jobs];
+  //     updatedJobs[jobIndex].masterlist.ENG[currentFileIndex].revisions = updatedRevisions;
+
+  //     // Save the updated jobs array back to localStorage
+  //     localStorage.setItem('jobs', JSON.stringify(updatedJobs));
+  //   } else {
+  //     console.error('Job not found in local storage');
+  //   }
+  // };
+
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -332,23 +362,29 @@ function EnggJobDetail() {
       size: `${(file.size / 1024).toFixed(2)} KB`,
     };
 
+    // Update only the selected file's revisions
     const updatedRevisions = [...revisions, newRevision];
     setRevisions(updatedRevisions);
 
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const jobIndex = jobs.findIndex((job) => job.jobId === currentJob.jobId);
 
-
     if (jobIndex !== -1) {
       const updatedJobs = [...jobs];
+
+      // Yahan sirf usi document ke revisions update honge jo selected hai
       updatedJobs[jobIndex].masterlist.ENG[currentFileIndex].revisions = updatedRevisions;
 
-      // Save the updated jobs array back to localStorage
+      // Save to localStorage
       localStorage.setItem('jobs', JSON.stringify(updatedJobs));
     } else {
       console.error('Job not found in local storage');
     }
-  };
+};
+
+
+
+
 
   // Mock function to estimate page count (replace with actual logic)
   function estimatePageCount(file) {
@@ -417,11 +453,17 @@ function EnggJobDetail() {
 
 
 
-  const openFileDetailsModal = (department, fileDescription) => {
+  const openFileDetailsModal = (department, fileDescription, revision) => {
     if (!currentJob || !currentJob.masterlist) return;
 
     const files = currentJob.masterlist[department];
     const file = files.find((f) => f.fileDescription === fileDescription);
+    console.log("file:",file);
+    console.log("file-des:",file.fileDescription);
+    console.log("file-rev:",file.revisions);
+    console.log("file-incom-rev:",file.incomingRevisions);
+    console.log("file:",file);
+
 
     if (file) {
       setModalData({
@@ -879,7 +921,7 @@ function EnggJobDetail() {
                                         <td className="text-center" >{doc.revision}</td>
                                         <td className="text-center" >
                                           <Link to={doc.fileLink} target="_blank">View</Link>
-                                          <Link to={doc.fileLink} download={doc.fileName} style={{marginLeft: "12px"}} target="_blank" rel="noopener noreferrer" title="Download">
+                                          <Link to={doc.fileLink} download={doc.fileName} style={{ marginLeft: "12px" }} target="_blank" rel="noopener noreferrer" title="Download">
                                             <i className="fas fa-download"></i>
                                           </Link>
                                         </td>
@@ -941,13 +983,13 @@ function EnggJobDetail() {
                           key={index}
                           className={getStatusClass(row.status)}
                         >
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.serialNo}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.department}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.fileDescription}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.revision}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.lastUpdated}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.status}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription)}>{row.owner}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.serialNo}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.department}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.fileDescription}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.revision}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.lastUpdated}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.status}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.owner}</td>
                           <td className="text-center d-flex align-items-center justify-content-center">
                             <Button
                               className="upload-btn text-center d-flex align-items-center justify-content-center"
@@ -1030,9 +1072,7 @@ function EnggJobDetail() {
                                   <tr key={index} className={getStatusClass(status)}>
                                     <td className="text-center">Rev {index}</td>
                                     <td className="text-center">
-                                      <a href={revision.hash} target="_blank" rel="noopener noreferrer">
-                                        View
-                                      </a>
+                                      {revision.hash}
                                     </td>
                                     <td className="text-center">{revision.date}</td>
                                     <td className="text-center">
@@ -1097,11 +1137,12 @@ function EnggJobDetail() {
                       <tbody id="revision-history-body">
                         {revisions.map((revision, index) => (
                           <tr key={index}>
-                            <td className="text-center" >{index}</td>
+                            <td className="text-center" >{index + 1}</td>
                             <td className="text-center" >{revision.hash}</td>
                             <td className="text-center" >{revision.date}</td>
                             <td className="text-center" >{revision.pageCount}</td>
                             <td className="text-center" >{revision.size}</td>
+
                           </tr>
                         ))}
                       </tbody>

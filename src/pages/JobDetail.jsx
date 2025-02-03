@@ -1543,7 +1543,7 @@ function JobDetail() {
                               <td>{file.pageCount}</td>
                               <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
                               <td>
-                                <Link to={file.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                <Link to = {file.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                   View
                                 </Link>
                               </td>
