@@ -7,8 +7,8 @@ import Modal from 'react-bootstrap/Modal';
 import Table from 'react-bootstrap/Table';
 import ModalDialog from 'react-bootstrap/ModalDialog'
 import { Link } from 'react-router-dom';
-
-
+import * as pdfjsLib from "pdfjs-dist/webpack";
+import { FaTimes } from "react-icons/fa";
 
 function EnggJobDetail() {
 
@@ -352,44 +352,66 @@ function EnggJobDetail() {
 
 
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+    let file = event.target.files[0];
     if (!file) return;
 
-    const newRevision = {
-      hash: `hash_${file.name}_${Date.now()}`, // Placeholder for hash generation
-      date: new Date().toLocaleDateString(),
-      pageCount: estimatePageCount(file), // Replace with your logic
-      size: `${(file.size / 1024).toFixed(2)} KB`,
-    };
+    getPDFPageCount(file, (pageCount) => {
 
-    // Update only the selected file's revisions
-    const updatedRevisions = [...revisions, newRevision];
-    setRevisions(updatedRevisions);
+      const newRevision = {
+        id: Date.now(),
+        name: file.name,
+        hash: `${file.name}_${Date.now()}`,
+        fileLink: URL.createObjectURL(file),
+        date: new Date().toLocaleDateString(),
+        pageCount: pageCount,
+        size: `${(file.size / 1024).toFixed(2)} KB`,
+      };
 
+      setRevisions((prevRevisions) => {
+        const updatedRevisions = [...prevRevisions, newRevision];
+        updateLocalStorage(updatedRevisions);
+        return updatedRevisions;
+      });
+    });
+  };
+
+  // Function to update local storage
+  const updateLocalStorage = (updatedRevisions) => {
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
     const jobIndex = jobs.findIndex((job) => job.jobId === currentJob.jobId);
 
     if (jobIndex !== -1) {
       const updatedJobs = [...jobs];
-
-      // Yahan sirf usi document ke revisions update honge jo selected hai
       updatedJobs[jobIndex].masterlist.ENG[currentFileIndex].revisions = updatedRevisions;
-
-      // Save to localStorage
       localStorage.setItem('jobs', JSON.stringify(updatedJobs));
-    } else {
-      console.error('Job not found in local storage');
     }
-};
+  };
 
+  // Function to delete a revision
+  const handleDeleteRevision = (id) => {
+    setRevisions((previousRevision) => {
+      const updatedRevisions = previousRevision.filter(revision => revision.id !== id);
+      updateLocalStorage(updatedRevisions);
+      return updatedRevisions;
+    }
+    )
+  };
 
-
-
-
-  // Mock function to estimate page count (replace with actual logic)
-  function estimatePageCount(file) {
-    return 20;
-  }
+  const getPDFPageCount = (file, callback) => {
+    const reader = new FileReader();
+    reader.onload = function () {
+      const typedArray = new Uint8Array(reader.result);
+      pdfjsLib.getDocument(typedArray).promise
+        .then((pdf) => {
+          callback(pdf.numPages);
+        })
+        .catch((error) => {
+          console.error("Error getting PDF page count:", error);
+          callback("Unknown Pages");
+        });
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
 
   const closeModal = () => {
@@ -458,11 +480,11 @@ function EnggJobDetail() {
 
     const files = currentJob.masterlist[department];
     const file = files.find((f) => f.fileDescription === fileDescription);
-    console.log("file:",file);
-    console.log("file-des:",file.fileDescription);
-    console.log("file-rev:",file.revisions);
-    console.log("file-incom-rev:",file.incomingRevisions);
-    console.log("file:",file);
+    console.log("fil  e:", file);
+    console.log("file-des:", file.fileDescription);
+    console.log("file-rev:", file.revisions);
+    console.log("file-incom-rev:", file.incomingRevisions);
+    console.log("file:", file);
 
 
     if (file) {
@@ -480,16 +502,12 @@ function EnggJobDetail() {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case "New":
-        return "status-new";
-      case "Shared":
-        return "status-shared";
-      case "Approved":
-        return "status-approved";
-      case "Returned":
-        return "status-returned";
+      case 'Approved':
+        return 'bg-green-500';
+      case 'Returned':
+        return 'bg-red-500';
       default:
-        return "status-default";
+        return 'bg-yellow-500';
     }
   };
 
@@ -981,15 +999,16 @@ function EnggJobDetail() {
                       {masterListRows.map((row, index) => (
                         <tr
                           key={index}
-                          className={getStatusClass(row.status)}
+                          // className={`text-center ${getStatusClass(row.status)}`}
+                          style={{backgroundColor:getStatusClass(row.status)}}
                         >
                           <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.serialNo}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.department}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.fileDescription}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.revision}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.lastUpdated}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.status}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription , row.revision)}>{row.owner}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.department}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.fileDescription}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.revision}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.lastUpdated}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.status}</td>
+                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.owner}</td>
                           <td className="text-center d-flex align-items-center justify-content-center">
                             <Button
                               className="upload-btn text-center d-flex align-items-center justify-content-center"
@@ -1049,7 +1068,7 @@ function EnggJobDetail() {
                             <thead>
                               <tr>
                                 <th className="text-center" style={{ width: "10.5%" }}>Rev No</th>
-                                <th className="text-center" style={{ width: "12.5%" }}>View Sent File</th>
+                                <th className="text-center" style={{ width: "12.5%" }}>Sent File</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>Sent Date</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>Return File</th>
                                 <th className="text-center" style={{ width: "14.5%" }}>Comment Code</th>
@@ -1069,17 +1088,19 @@ function EnggJobDetail() {
                                     : "New";
 
                                 return (
-                                  <tr key={index} className={getStatusClass(status)}>
+                                  <tr key={index} className="text-center" style={{backgroundColor:getStatusClass(status)}}>
                                     <td className="text-center">Rev {index}</td>
                                     <td className="text-center">
-                                      {revision.hash}
+                                      <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                        {revision.hash}
+                                      </Link>
                                     </td>
                                     <td className="text-center">{revision.date}</td>
                                     <td className="text-center">
                                       {lastFeedback.hash ? (
-                                        <a href={lastFeedback.hash} target="_blank" rel="noopener noreferrer">
-                                          View
-                                        </a>
+                                        <Link to={lastFeedback.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                          {lastFeedback.name}
+                                        </Link>
                                       ) : (
                                         "N/A"
                                       )}
@@ -1127,7 +1148,7 @@ function EnggJobDetail() {
                       <thead>
                         <tr>
                           <th className="text-center" style={{ width: "15%" }}>Revision</th>
-                          <th className="text-center" style={{ width: "28%" }}>File Hash</th>
+                          <th className="text-center" style={{ width: "28%" }}>File Name</th>
                           <th className="text-center" style={{ width: "15%" }}>File Date</th>
                           <th className="text-center" style={{ width: "14%" }}>Page Count	</th>
                           <th className="text-center" style={{ width: "13%" }}>File Size</th>
@@ -1137,11 +1158,21 @@ function EnggJobDetail() {
                       <tbody id="revision-history-body">
                         {revisions.map((revision, index) => (
                           <tr key={index}>
-                            <td className="text-center" >{index + 1}</td>
-                            <td className="text-center" >{revision.hash}</td>
+                            <td className="text-center" >{index}</td>
+                            <td className="text-center" >
+                              <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                {revision.hash}
+                              </Link>
+                            </td>
                             <td className="text-center" >{revision.date}</td>
                             <td className="text-center" >{revision.pageCount}</td>
                             <td className="text-center" >{revision.size}</td>
+                            <td className="text-center" >
+                              <FaTimes
+                                style={{ color: 'red', cursor: 'pointer' }}
+                                onClick={() => handleDeleteRevision(revision.id)}
+                              />
+                            </td>
 
                           </tr>
                         ))}
@@ -1771,8 +1802,16 @@ function EnggJobDetail() {
       {/* document MasterList */}
 
       <div className="card h-100 p-0 radius-12">
-        <div className="card-header border-bottom bg-base py-16 px-24">
+        <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between w-100" style={{ width: 100 + '%' }}>
           <h6 className="text-lg fw-semibold mb-0">Document Masterlist</h6>
+          <Button
+            type="button"
+            className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-20 py-11"
+            variant="primary"
+            onClick=""
+          >
+            Send Transmittal
+          </Button>
         </div>
         <div className="card-body p-24">
           <div className="row row-cols-1 gy-4">
@@ -1787,7 +1826,7 @@ function EnggJobDetail() {
                         <th className="text-center">NMR Code</th>
                         <th className="text-center">Client Code</th>
                         <th className="text-center">Client Doc. No.</th>
-                        <th className="text-center">ZS Doc No.</th>
+                        <th className="text-center">Company Doc No.</th>
                         <th className="text-center">Planned Date</th>
                         <th className="text-center">Owner (Email)</th>
                         <th className="text-center">Upload</th>

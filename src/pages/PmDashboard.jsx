@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react/dist/iconify.js'
-import React, { useState, useEffect} from 'react'
+import React, { useState, useEffect } from 'react'
 import MasterLayout from "../masterLayout/MasterLayout";
 import Breadcrumb from "../components/Breadcrumb";
 import Button from 'react-bootstrap/Button';
@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 function PmDashboard() {
 
   const [modalShow, setModalShow] = useState(false);
+  const [modalShow2, setModalShow2] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [totalJobs, setTotalJobs] = useState(0);
   const [totalTransmittals, setTotalTransmittals] = useState(0);
@@ -53,8 +54,11 @@ function PmDashboard() {
   function managePermission() {
     setModalShow(true)
   }
+  function viewPermission() {
+    setModalShow2(true)
+  }
 
-  function redirect(job){
+  function redirect(job) {
     localStorage.setItem('currentJobId', job.jobId);
     navigate('/project-management-job-detail');   // PM Job Details Page
   }
@@ -69,7 +73,7 @@ function PmDashboard() {
     );
     setPermissions(updatedPermissions);
   };
-  
+
   function savePermissions() {
     const jobId = localStorage.getItem('currentJobId');
     const jobIndex = jobs.findIndex(j => j.jobId === jobId);
@@ -81,8 +85,8 @@ function PmDashboard() {
       setModalShow(false);
     }
   }
-  
-  
+
+
 
   return (
     <MasterLayout>
@@ -95,8 +99,8 @@ function PmDashboard() {
           <h6 className="text-lg fw-semibold mb-0">Project Management Dashboard</h6>
         </div>
         <div className="card-body p-24">
-          <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4" style={{width : "full"}}>
-            <div className="col" style={{width: "33%"}}>
+          <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4" style={{ width: "full" }}>
+            <div className="col" style={{ width: "33%" }}>
               <div className="card shadow-none border bg-gradient-start-1">
                 <div className="card-body p-20">
                   <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -117,7 +121,7 @@ function PmDashboard() {
               </div>
               {/* card end */}
             </div>
-            <div className="col" style={{width: "33%"}}>
+            <div className="col" style={{ width: "33%" }}>
               <div className="card shadow-none border bg-gradient-start-2">
                 <div className="card-body p-20">
                   <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -138,7 +142,7 @@ function PmDashboard() {
               </div>
               {/* card end */}
             </div>
-            <div className="col" style={{width: "33%"}}>
+            <div className="col" style={{ width: "33%" }}>
               <div className="card shadow-none border bg-gradient-start-3">
                 <div className="card-body p-20">
                   <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -167,6 +171,15 @@ function PmDashboard() {
         <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between w-100" style={{ width: 100 + '%' }}>
 
           <h6 className="text-lg fw-semibold mb-0">Active Jobs</h6>
+
+          <Button
+            type="button"
+            className="action-btn"
+            variant="outline-secondary"
+            onClick={viewPermission}
+          >
+            View Permissions
+          </Button>
 
           <Button
             type="button"
@@ -270,6 +283,91 @@ function PmDashboard() {
               </Button>
             </Modal.Footer>
           </Modal>
+
+          <Modal
+            show={modalShow2}
+            size="lg"
+            aria-labelledby="contained-modal-title-vcenter"
+            centered
+          >
+            <Modal.Header>
+              <Modal.Title id="contained-modal-title-vcenter">
+                Permissions
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Table bordered>
+                <thead>
+                  <tr>
+                    <th style={{ width: '25%' }}>Name</th>
+                    <th style={{ width: '25%' }}>Email</th>
+                    <th style={{ width: '10%' }}>Read</th>
+                    <th style={{ width: '10%' }}>Update</th>
+                    <th style={{ width: '10%' }}>Notify</th>
+                  </tr>
+                </thead>
+                <tbody id="permissionsTableBody">
+                  {permissions.map((perm, index) => (
+                    <tr key={index}>
+                      <td>
+                        <input
+                          type="text"
+                          value={perm.name}
+                          placeholder="Enter Name"
+                          onChange={(e) => handleInputChange(index, 'name', e.target.value)}
+                          style={{ width: '100%' }} // Limit input width
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="email"
+                          value={perm.email}
+                          placeholder="Enter Email"
+                          onChange={(e) => handleInputChange(index, 'email', e.target.value)}
+                          style={{ width: '100%' }} // Limit input width
+                        />
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          checked={perm.read}
+                          onChange={(e) => handleInputChange(index, 'read', e.target.checked)}
+                        />
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          checked={perm.update}
+                          onChange={(e) => handleInputChange(index, 'update', e.target.checked)}
+                        />
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          checked={perm.notify}
+                          onChange={(e) => handleInputChange(index, 'notify', e.target.checked)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+
+            </Modal.Body>
+            <Modal.Footer>
+
+              <Button
+                className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                onClick={() => setModalShow2(false)}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+
         </div>
         <div className="card-body p-24">
           <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4">

@@ -199,27 +199,6 @@ function JobDetail() {
         fileLink: URL.createObjectURL(file),
       };
 
-      // const fileDetails = {
-      //   srNo,
-      //   fileName: file.name,
-      //   fileType,
-      //   fileSize: formatFileSize(file.size),
-      //   lastModified: new Date(file.lastModified).toLocaleDateString(),
-      //   pageCount: fileType === 'pdf' ? 'Getting page count...' : '1 Page',
-      //   revision: 0,
-      //   revisions: [
-      //     {
-      //       revision: 0,
-      //       hash: generateFileHash(file),
-      //       fileLink: "",
-      //       transmittalId: 'Pending',
-      //       uploadDate: new Date().toLocaleDateString(),
-      //     },
-      //   ],
-      //   fileLink: "",
-      // };
-
-
 
       if (fileType === 'pdf') {
         getPDFPageCount(file, (pageCount) => {
@@ -248,7 +227,6 @@ function JobDetail() {
       console.log('Updated job data saved to localStorage:', jobs[jobIndex]);
     }
   }
-
 
   const addClientDocs = () => {
     fileInputRef.current.click();
@@ -407,7 +385,7 @@ function JobDetail() {
     } else {
       fileLink = URL.createObjectURL(latestRevision.file);
     }
-    
+
 
     console.log("Final File Link:", fileLink);
 
@@ -424,8 +402,6 @@ function JobDetail() {
 
     setFileDetailModal(true);
   }
-
-
 
 
   // Close the modal
@@ -511,6 +487,47 @@ function JobDetail() {
     // setModalShow(true);
   };
 
+  //work here
+  // const openRevisionHistoryModal = (srNo) => {
+  //   console.log("openRevisionHistoryModal triggered with srNo:", srNo);
+
+  //   // Fetch updated jobs from localStorage
+  //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   const jobId = getQueryParam('jobId');
+  //   console.log("Retrieved jobId:", jobId);
+  //   console.log("Retrieved jobs array:", jobs);
+
+  //   const job = jobs.find((j) => j.jobId === jobId);
+
+  //   if (!job) {
+  //     console.error("Error: Job or incomingDocs not found");
+  //     showErrorAlert("Job not found.");
+  //     return;
+  //   }
+
+  //   const file = job.incomingDocs.find((doc) => doc.srNo === srNo);
+
+  //   if (!file || !file.revisions) {
+  //     console.error("Error: File or revisions not found");
+  //     showErrorAlert("File or revisions not found.");
+  //     return;
+  //   }
+
+  //   // Force update modal data with fresh data from localStorage
+  //   setModalData({
+  //     fileName: file.fileName,
+  //     revisions: [...file.revisions],  // Ensure fresh reference
+  //   });
+
+  //   console.log("Updated modal data:", {
+  //     fileName: file.fileName,
+  //     revisions: file.revisions,
+  //   });
+
+  //   setRevisionModalShow(true); // Open the modal
+  // };
+
+
   const openRevisionModal = (jobId, srNo) => {
     console.log("openRevisionModal triggered with jobId:", jobId, "and srNo:", srNo);
 
@@ -524,7 +541,7 @@ function JobDetail() {
   };
 
   const handleRevisionClick = (jobId, srNo) => {
-    openRevisionHistoryModal(srNo);
+    openRevisionHistoryModal(srNo)
     openRevisionModal(jobId, srNo)
   };
 
@@ -568,6 +585,148 @@ function JobDetail() {
   //   }
   // };
 
+  const handleDeleteIncomingDoc = (jobId, srNo) => {
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const job = jobs.find((j) => j.jobId === jobId);
+
+    if (!job) {
+      Swal.fire("Error", "Job not found!", "error");
+      return;
+    }
+
+    job.incomingDocs = job.incomingDocs.filter((doc) => doc.srNo !== srNo);
+
+    localStorage.setItem('jobs', JSON.stringify(jobs));
+
+    setIncomingDocs(job.incomingDocs);
+
+    Swal.fire('Success', 'Document deleted successfully!', 'success');
+  }
+
+  // const handleDeleteRevision = (jobId, srNo, revisionIndex) => {
+  //   console.log("handleDeleteRevision triggered with jobId:", jobId, "srNo:", srNo, "revisionIndex:", revisionIndex);
+
+  //   // Retrieve jobs from localStorage
+  //   let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+
+  //   // Find the job
+  //   let job = jobs.find((j) => j.jobId === jobId);
+  //   if (!job) {
+  //     Swal.fire("Error", "Job not found!", "error");
+  //     return;
+  //   }
+
+  //   // Find the document
+  //   let doc = job.incomingDocs.find((d) => d.srNo === srNo);
+  //   if (!doc || !doc.revisions) {
+  //     Swal.fire("Error", "Document or revisions not found!", "error");
+  //     return;
+  //   }
+
+  //   // Ensure revision exists before deleting
+  //   if (revisionIndex < 0 || revisionIndex >= doc.revisions.length) {
+  //     Swal.fire("Error", "Invalid revision index!", "error");
+  //     return;
+  //   }
+
+  //   // Remove the specified revision
+  //   doc.revisions.splice(revisionIndex, 1);
+
+  //   // Update the revision count
+  //   doc.revision = doc.revisions.length > 0 ? doc.revisions.length - 1 : 0;
+
+  //   // Save updated jobs to localStorage
+  //   localStorage.setItem('jobs', JSON.stringify(jobs));
+
+  //   // Fetch updated data to ensure UI sync
+  //   const updatedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   const updatedJob = updatedJobs.find((j) => j.jobId === jobId);
+  //   const updatedDoc = updatedJob?.incomingDocs.find((d) => d.srNo === srNo);
+
+  //   // Update modal data
+  //   setModalData((prevData) => ({
+  //     ...prevData,
+  //     revisions: updatedDoc?.revisions || [],
+  //   }));
+
+  //   // Update incomingDocs state to reflect changes in the main table
+  //   setIncomingDocs((prevDocs) =>
+  //     prevDocs.map((d) =>
+  //       d.srNo === srNo ? { ...d, revisions: updatedDoc?.revisions || [], revision: updatedDoc?.revision || 0 } : d
+  //     )
+  //   );
+
+  //   console.log("Updated modalData:", {
+  //     fileName: updatedDoc?.fileName || "",
+  //     revisions: updatedDoc?.revisions || [],
+  //   });
+
+  //   Swal.fire('Success', 'Revision deleted successfully!', 'success');
+  // };
+
+
+
+  const handleDeleteRevision = (jobId, srNo, revisionIndex) => {
+    console.log("handleDeleteRevision triggered with jobId:", jobId, "srNo:", srNo, "revisionIndex:", revisionIndex);
+
+    // Retrieve jobs from localStorage
+    let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+
+    // Find the job
+    let job = jobs.find((j) => j.jobId === jobId);
+    if (!job) {
+      Swal.fire("Error", "Job not found!", "error");
+      return;
+    }
+
+    // Find the document
+    let doc = job.incomingDocs.find((d) => d.srNo === srNo);
+    if (!doc || !doc.revisions) {
+      Swal.fire("Error", "Document or revisions not found!", "error");
+      return;
+    }
+
+    // Ensure revision exists before deleting
+    if (revisionIndex < 0 || revisionIndex >= doc.revisions.length) {
+      Swal.fire("Error", "Invalid revision index!", "error");
+      return;
+    }
+
+    // Remove the specified revision
+    doc.revisions.splice(revisionIndex, 1);
+
+    // Update the revision count
+    doc.revision = doc.revisions.length > 0 ? doc.revisions.length - 1 : 0;
+
+    // Save updated jobs to localStorage
+    localStorage.setItem('jobs', JSON.stringify(jobs));
+
+    // Fetch updated data to ensure UI sync
+    const updatedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    const updatedJob = updatedJobs.find((j) => j.jobId === jobId);
+    const updatedDoc = updatedJob?.incomingDocs.find((d) => d.srNo === srNo);
+
+    // Update modal data
+    setModalData((prevData) => ({
+      ...prevData,
+      revisions: updatedDoc?.revisions || [],
+    }));
+
+    // Update incomingDocs state to reflect changes in the main table
+    setIncomingDocs((prevDocs) =>
+      prevDocs.map((d) =>
+        d.srNo === srNo ? { ...d, revisions: updatedDoc?.revisions || [], revision: updatedDoc?.revision || 0 } : d
+      )
+    );
+
+    console.log("Updated modalData:", {
+      fileName: updatedDoc?.fileName || "",
+      revisions: updatedDoc?.revisions || [],
+    });
+
+    Swal.fire('Success', 'Revision deleted successfully!', 'success');
+  };
+
 
   const renderFilePreview = (fileType, fileLink, fileName) => {
     if (!fileLink) return <p>No preview available.</p>;
@@ -588,20 +747,19 @@ function JobDetail() {
     }
     else if (lowerFileType === 'txt') {
       // Fetch text file content
-      return TextFilePreview (fileLink);
+      return TextFilePreview(fileLink);
     }
     else {
       return (
         <p>
           Preview not available for this file type.{' '}
           <button onClick={() => downloadFile(fileLink, fileName)} style={{ color: 'blue', background: 'none', border: 'none', cursor: 'pointer' }}>
-              Click here to download.
+            Click here to download.
           </button>
         </p>
       );
     }
   };
-
 
 
   const downloadFile = (fileLink, fileName) => {
@@ -626,7 +784,6 @@ function JobDetail() {
 
     return <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{content}</pre>;
   };
-
 
   // Upload a new revision.
   const uploadNewRevision = async () => {
@@ -849,7 +1006,7 @@ function JobDetail() {
 
     const transmittal = job.transmittals?.find((t) => t.date === date);
 
-    console.log(transmittal);
+    console.log("transmittal: 1009:", transmittal);
 
     if (!transmittal) {
       console.error(`Transmittal for date ${date} not found.`);
@@ -1059,13 +1216,7 @@ function JobDetail() {
                     <tr key={doc.srNo} className="text-center align-middle">
                       <td>{doc.srNo}</td>
                       <td>
-                        <Link to="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleFileNameClick(doc.srNo)
-                          }}>
-                          {doc.fileName}
-                        </Link>
+                        {doc.fileName}
                       </td>
                       <td>{doc.fileType}</td>
                       <td>{doc.fileSize}</td>
@@ -1090,11 +1241,21 @@ function JobDetail() {
                         &nbsp;
                         <Link to="#"
                           onClick={(e) => {
-                            e.preventDefault(); // Prevent default anchor behavior
-                            handleRevisionClick(jobID, doc.srNo);
+                            e.preventDefault();
+                            handleFileNameClick(doc.srNo)
                           }}
                           title="Add Additional Fields">
                           <i className="fas fa-plus-circle"></i>
+                        </Link>
+                        &nbsp;
+
+                        <Link to="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDeleteIncomingDoc(jobID, doc.srNo);
+                          }}
+                          title="Delete Revision">
+                          <i className="fas fa-times-circle text-danger"></i>
                         </Link>
                       </td>
                     </tr>
@@ -1164,13 +1325,27 @@ function JobDetail() {
                       </td>
                       <td className="text-center">
                         {typeof revision.fileLink === "string" ? (
-                          <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer">
-                            View
-                          </Link>
+                          <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", gap: "15px" }}>
+                            <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                              View
+                            </Link>
+                            <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 10px" }}></span>
+                            <Link to="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleDeleteRevision(jobID, selectedSrNo, index);
+                              }}
+                              title="Delete Revision"
+                              style={{ display: "flex", alignItems: "center" }}
+                            >
+                              <i className="fas fa-times-circle text-danger"></i>
+                            </Link>
+                          </div>
                         ) : (
                           "No File Link"
                         )}
                       </td>
+
                       <td className="text-center">{index === 0 ? "DOC-1" : typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
 
                     </tr>
@@ -1324,18 +1499,28 @@ function JobDetail() {
               <tbody id="transmittalsBody">
                 {transmittals.map((transmittal) => (
                   <tr key={transmittal.id} className="text-center align-middle">
-                    <td onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}>{transmittal.id}</td>
-                    <td onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}>{transmittal.date}</td>
-                    <td onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}>{transmittal.summary}</td>
-                    <td>{transmittal.notifiedDepartments?.join(', ') || 'None'}</td>
-                    <td>
-                      <button
-                        className="notify-btn btn rounded-pill btn btn-outline-primary text-primary-600 radius-8 px-1 py-2"
+                    <td className="align-middle" >{transmittal.id}</td>
+                    <td className="align-middle" >{transmittal.date}</td>
+                    <td className="align-middle" >{transmittal.summary}</td>
+                    <td className="align-middle" >{transmittal.notifiedDepartments?.join(', ') || 'None'}</td>
+                    <td className="text-center align-middle" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      <Button
+                        className="action-btn"
+                        variant="outline-secondary"
+                        style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
                         onClick={() => openNotifyModal(transmittal.id)}
                         disabled={transmittal.notifiedDepartments.length > 0}
                       >
-                        {transmittal.notifiedDepartments.length > 0 ? "Sent" : "Send Transmittal"}
-                      </button>
+                          {transmittal.notifiedDepartments.length > 0 ? "Notified" : "Notify"}
+                      </Button>
+                      <Button
+                        className="action-btn px-2"
+                        variant="outline-secondary"
+                        onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}
+                        style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                      >
+                        View
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -1524,13 +1709,13 @@ function JobDetail() {
                       <Table striped bordered hover>
                         <thead>
                           <tr>
-                            <th>File Name</th>
-                            <th>File Type</th>
-                            <th>Size</th>
-                            <th>Last Modified</th>
-                            <th>Page Count</th>
-                            <th>Revision</th>
-                            <th>Actions</th>
+                            <th className="text-center">File Name</th>
+                            <th className="text-center">File Type</th>
+                            <th className="text-center">Size</th>
+                            <th className="text-center">Last Modified</th>
+                            <th className="text-center">Page Count</th>
+                            <th className="text-center">Revision</th>
+                            <th className="text-center">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1543,7 +1728,12 @@ function JobDetail() {
                               <td>{file.pageCount}</td>
                               <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
                               <td>
-                                <Link to = {file.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                <Link
+                                  to = {file.revisions?.[file.revision]?.fileLink || "#"}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Download"
+                                >
                                   View
                                 </Link>
                               </td>

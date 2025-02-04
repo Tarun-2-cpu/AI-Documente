@@ -34,7 +34,8 @@ function PmJobDetail() {
   const [commentCode, setCommentCode] = useState('');
   const [actionDate, setActionDate] = useState('');
   const [additionalComment, setAdditionalComment] = useState('');
-
+  const [modalData, setModalData] = useState('');
+  const [detailModal,setDetailModal] = useState(false);
 
 
   const [departments, setDepartments] = useState({
@@ -88,7 +89,7 @@ function PmJobDetail() {
       }
     }
 
-  }, [fileDescription,outgoingTransmittalList]);
+  }, [fileDescription, outgoingTransmittalList]);
 
   const handleCheckboxChange = (value) => {
     setSelectedDepartments((prev) =>
@@ -176,6 +177,33 @@ function PmJobDetail() {
       setMasterListRows(rows);
     }
   };
+
+
+  const openFileDetailsModal = (department, fileDescription, revision) => {
+    if (!currentJob || !currentJob.masterlist) return;
+
+    const files = currentJob.masterlist[department];
+    const file = files.find((f) => f.fileDescription === fileDescription);
+    console.log("file:", file);
+    console.log("file-des:", file.fileDescription);
+    console.log("file-rev:", file.revisions);
+    console.log("file-incom-rev:", file.incomingRevisions);
+    console.log("file:", file);
+
+
+    if (file) {
+      setModalData({
+        department,
+        fileDescription: file.fileDescription,
+        ownerEmail: file.ownerEmail,
+        revisions: file.revisions || [],
+        incomingRevisions: file.incomingRevisions || [],
+      });
+      setDetailModal(true);
+    }
+  };
+
+
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -295,11 +323,22 @@ function PmJobDetail() {
       return;
     }
 
+    let fileLink = ""
+
+    if (file instanceof Blob || file instanceof File) {
+      fileLink = URL.createObjectURL(file);
+    } else {
+      console.error("Invalid file object:", file);
+      alert("Invalid file format. Please re-upload the file.");
+      return;
+    }
+
     const fileDetails = {
       name: file.name,
       size: (file.size / 1024).toFixed(2) + ' KB',
       date: new Date().toLocaleDateString(),
-      hash: `hash_${file.name}_${Date.now()}`,
+      hash: `${file.name}_${Date.now()}`,
+      fileLink: fileLink,
       commentCode,
       actionDate,
       additionalComment,
@@ -504,7 +543,7 @@ function PmJobDetail() {
     saveTransmittal(newTransmittal);
     setOutgoingTransmittal(newTransmittal);
     closeOutgoingTransmittalModal();
-    setOutgoingTransmittalList([...outgoingTransmittalList , newTransmittal ])
+    setOutgoingTransmittalList([...outgoingTransmittalList, newTransmittal])
   };
 
 
@@ -869,21 +908,31 @@ function PmJobDetail() {
                 {masterListRows.length > 0 ? (
                   masterListRows.map((row, index) => (
                     <tr key={index} className={getStatusClass(row.status)}>
-                      <td className="text-center" >{row.serialNo}</td>
-                      <td className="text-center" >{row.department}</td>
-                      <td className="text-center" >{row.fileDescription}</td>
-                      <td className="text-center" >{row.revision}</td>
-                      <td className="text-center" >{row.lastUpdated}</td>
-                      <td className="text-center" >{row.status}</td>
-                      <td className="text-center" >
+                      <td className="text-center align-middle" >{row.serialNo}</td>
+                      <td className="text-center align-middle" >{row.department}</td>
+                      <td className="text-center align-middle" >{row.fileDescription}</td>
+                      <td className="text-center align-middle" >{row.revision}</td>
+                      <td className="text-center align-middle" >{row.lastUpdated}</td>
+                      <td className="text-center align-middle" >{row.status}</td>
+                      <td className="text-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
                         <Button
                           className="action-btn"
                           variant="outline-secondary"
-                          onClick={() => openIncomingModal(row.fileDescription)}
+                          style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                          onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}
                         >
-                          Incoming File
+                          View
+                        </Button>
+                        <Button
+                          className="action-btn px-2"
+                          variant="outline-secondary"
+                          onClick={() => openIncomingModal(row.fileDescription)}
+                          style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                        >
+                          Respond
                         </Button>
                       </td>
+
                     </tr>
                   ))
                 ) : (
@@ -897,6 +946,112 @@ function PmJobDetail() {
               </tbody>
             </Table>
           </div>
+
+          {/*Files Details*/}
+          {modalData && (
+
+            <Modal
+              show={detailModal}
+              onHide={() => setDetailModal(false)}
+              size="xl"
+              aria-labelledby="contained-modal-title-vcenter"
+              centered
+              id="revisionModal"
+            >
+              <Modal.Header>
+                <Modal.Title id="contained-modal-title-vcenter">
+                  Files Details
+                </Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+
+                <div>
+                  <Table bordered id="revision-history-table">
+                    <tbody>
+                      <tr>
+                        <th>Deparment : </th>
+                        <td>{modalData.department}</td>
+                      </tr>
+                      <tr>
+                        <th>File Description:</th>
+                        <td>{modalData.fileDescription}</td>
+                      </tr>
+                      <tr>
+                        <th>Owner:</th>
+                        <td>{modalData.ownerEmail}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </div>
+
+                <div className="card h-100 p-0 radius-12 mt-24">
+                  <div className="card-body p-24">
+
+                    <Table bordered id="revision-history-table">
+                      <thead>
+                        <tr>
+                          <th className="text-center" style={{ width: "10.5%" }}>Rev No</th>
+                          <th className="text-center" style={{ width: "12.5%" }}>Recieved File</th>
+                          <th className="text-center" style={{ width: "12.5%" }}>Recieved Date</th>
+                          <th className="text-center" style={{ width: "14.5%" }}>Added Comment Code</th>
+                          <th className="text-center" style={{ width: "12.5%" }}>Added Comment</th>
+                          <th className="text-center" style={{ width: "12.5%" }}>Return File</th>
+                          <th className="text-center" style={{ width: "12.5%" }}>Return Date</th>
+                          <th className="text-center" style={{ width: "12.5%" }}>File Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="">
+                        {modalData.revisions.map((revision, index) => {
+                          const incomingFeedback = modalData.incomingRevisions[index];
+                          const lastFeedback = incomingFeedback?.[incomingFeedback.length - 1] || {};
+                          const status = ["F", "I", "R"].includes(lastFeedback.commentCode)
+                            ? "Approved"
+                            : ["A", "B", "C", "V"].includes(lastFeedback.commentCode)
+                              ? "Returned"
+                              : "New";
+
+                          return (
+                            <tr key={index} className={getStatusClass(status)}>
+                              <td className="text-center align-middle">Rev {index}</td>
+                              <td className="text-center align-middle">
+                                <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                  {revision.name}
+                                </Link>
+                              </td>
+                              <td className="text-center align-middle">{revision.date}</td>
+                                    <td className="text-center align-middle">{lastFeedback.commentCode || "N/A"}</td>
+                                    <td className="text-center align-middle">{lastFeedback.additionalComment || "N/A"}</td>
+                              <td className="text-center align-middle">
+                                {lastFeedback.hash ? (
+                                  <Link to={lastFeedback.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
+                                    {lastFeedback.name}
+                                  </Link>
+                                ) : (
+                                  "N/A"
+                                )}
+                              </td>
+                              <td className="text-center align-middle">{lastFeedback.date || "N/A"}</td>
+                              <td className="text-center align-middle">{status}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                  onClick={() => setDetailModal(false)}
+                >
+                  Close
+                </Button>
+              </Modal.Footer>
+            </Modal>
+
+          )}
+
           <Modal
             show={showModal}
             size="lg"
@@ -975,12 +1130,10 @@ function PmJobDetail() {
                 <div className="">
                   <input type="file" className=
                     "form-control"
-                    value={file}
                     onChange={(e) => {
-                      setFile(e.target.value)
-                      console.log(e)
-                    }
-                    }
+                      setFile(e.target.files[0])
+                      console.log(e.target.files[0])
+                    }}
                     id="inputGroupFile01" />
                 </div>
               </div>
@@ -1220,16 +1373,16 @@ function PmJobDetail() {
                       <Table>
                         <thead>
                           <tr>
-                            <th style={{width : "10%"}}>Description</th>
-                            <th style={{width : "10%"}} >Equipment Tag	</th>
-                            <th style={{width : "10%"}} >NMR Code	</th>
-                            <th style={{width : "10%"}} >Client Code	</th>
-                            <th style={{width : "10%"}} >Client Document No.	</th>
-                            <th style={{width : "10%"}} >Company Doc No.</th>
-                            <th style={{width : "10%"}} >Revision	</th>
-                            <th style={{width : "10%"}} >Planned Date	</th>
-                            <th style={{width : "10%"}} >Owner</th>
-                            <th style={{width : "10%"}} >File Actions</th>
+                            <th style={{ width: "10%" }}>Description</th>
+                            <th style={{ width: "10%" }} >Equipment Tag	</th>
+                            <th style={{ width: "10%" }} >NMR Code	</th>
+                            <th style={{ width: "10%" }} >Client Code	</th>
+                            <th style={{ width: "10%" }} >Client Document No.	</th>
+                            <th style={{ width: "10%" }} >Company Doc No.</th>
+                            <th style={{ width: "10%" }} >Revision	</th>
+                            <th style={{ width: "10%" }} >Planned Date	</th>
+                            <th style={{ width: "10%" }} >Owner</th>
+                            <th style={{ width: "10%" }} >File Actions</th>
                           </tr>
                         </thead>
                         <tbody>
