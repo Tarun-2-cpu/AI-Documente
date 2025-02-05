@@ -9,6 +9,9 @@ import ModalDialog from 'react-bootstrap/ModalDialog'
 import { Link } from 'react-router-dom';
 import * as pdfjsLib from "pdfjs-dist/webpack";
 import { FaTimes } from "react-icons/fa";
+import "./Modal.css";
+import Swal from 'sweetalert2';
+
 
 function EnggJobDetail() {
 
@@ -57,6 +60,20 @@ function EnggJobDetail() {
   const [currentFileIndex, setCurrentFileIndex] = useState(null);
   const [revisions, setRevisions] = useState([]);
 
+  //transmittal
+  const [files, setFiles] = useState([]); // Files data with revisions
+  const [selectAll, setSelectAll] = useState(false);
+  const [transmittalDetails, setTransmittalDetails] = useState(null);
+  const [currentTransmittalId, setCurrentTransmittalId] = useState(null);
+
+  // notify 
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
+
+  const [notifyModal, setNotifyModal] = useState(false)
+  const [jobID, setJobID] = useState('');
+  const [summary, setSummary] = useState('');
+  const [jobs, setJobs] = useState(JSON.parse(localStorage.getItem('jobs')) || []);
+  const [createNewTransmittal, setCreateNewTransmittal] = useState(false);
 
 
   useEffect(() => {
@@ -600,6 +617,178 @@ function EnggJobDetail() {
   }, []);
 
 
+
+  // here
+
+  //handle create transmittal
+  const createTransmittal = () => {
+    if (!files.some((file) => file.selected)) {
+      alert('Please select at least one file.');
+      return;
+    }
+
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const job = jobs.find((j) => j.jobId === jobID);
+
+    if (!job) {
+      alert('Job not found.');
+      return;
+    }
+
+    const transmittalID = createUniqueTransmittalID(jobID);
+
+    const selectedFiles = files
+      .filter((file) => file.selected)
+      .map((file) => ({
+        srNo: file.srNo,
+        revision: file.revision,
+      }));
+
+    const newTransmittal = {
+      id: transmittalID,
+      date: new Date().toLocaleString(),
+      summary,
+      status: 'Pending',
+      files: selectedFiles,
+      notifiedDepartments: [],
+    };
+
+    const updatedIncomingDocs = [...(job.incomingDocs || [])];
+    selectedFiles.forEach((selected) => {
+      const doc = updatedIncomingDocs.find((d) => d.srNo === selected.srNo);
+      const revision = doc?.revisions.find((rev) => rev.revision === selected.revision);
+      if (revision) {
+        revision.transmittalID = transmittalID;
+      }
+    });
+
+    const updatedJobs = jobs.map((j) =>
+      j.jobId === jobID
+        ? { ...j, transmittals: [...(j.transmittals || []), newTransmittal], incomingDocs: updatedIncomingDocs }
+        : j
+    );
+
+    localStorage.setItem("jobs", JSON.stringify(updatedJobs));
+    console.log("804 Jobs Size:", JSON.stringify(updatedJobs).length);
+    setJobs(updatedJobs);
+    setTransmittals([...job.transmittals, newTransmittal]);
+
+    setSummary("");
+    setFiles([]);
+    setCreateNewTransmittal(false);
+  };
+
+  function createUniqueTransmittalID(jobId) {
+    // Retrieve the jobs from localStorage
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+
+    // Find the current job
+    const job = jobs.find(j => j.jobId === jobId);
+
+    // Determine the next transmittal number by counting existing transmittals
+    const transmittalCount = job?.transmittals?.length || 0;
+    const nextTransmittalNumber = transmittalCount + 1;
+
+    // Return formatted Transmittal ID: TRANS-JobID-Number
+    return `TRANS-${jobId}-00${nextTransmittalNumber}`;
+  }
+
+  //open create modal
+  function openCreateTransmittalModal() {
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    const jobId = localStorage.getItem("currentJobId");
+    const job = jobs.find((j) => j.jobId === jobId);
+
+    if (!job || !job.incomingDocs) {
+      alert("No incoming documents found for this job.");
+      return;
+    }
+
+    // Prepare file data with revisions
+    const fileData = job.incomingDocs.map((doc) => ({
+      srNo: doc.srNo,
+      fileName: doc.fileName,
+      revisions: doc.revisions.map((rev) => rev.revision),
+    }));
+    setFiles(fileData); // Update state with files
+    setCreateNewTransmittal(true); // Open modal
+  };
+
+  // open notify modal
+  function openNotifyModal(id) {
+    setNotifyModal(true);
+    setCurrentTransmittalId(id);
+  }
+
+  const handleSelectAllChange = () => {
+    setSelectAll(!selectAll);
+    if (!selectAll) {
+      setSelectedDepartments([
+        "PM",
+        "ENG",
+        "MOC",
+        "QAQC",
+        "MP",
+        "MFG",
+      ]);
+    } else {
+      setSelectedDepartments([]);
+    }
+  };
+
+
+
+  const handleCheckboxChange = (value) => {
+    setSelectedDepartments((prev) =>
+      prev.includes(value)
+        ? prev.filter((department) => department !== value)
+        : [...prev, value]
+    );
+  };
+
+  // notify department
+
+  const handleSave2 = () => {
+    if (selectedDepartments.length === 0) {
+      alert("Please select at least one department.");
+      return;
+    }
+
+    // const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+    // const jobId = localStorage.getItem("currentJobId");
+    // const job = jobs.find((j) => j.jobId === jobId) || null;
+
+    // if (!job) {
+    //   console.error("No job found for the given jobId:", jobId);
+    //   return;
+    // }
+
+    // const transmittal = job.transmittals.find((t) => t.id === currentTransmittalId);
+    // if (transmittal) {
+    //   // Update transmittal's notified departments
+    //   transmittal.notifiedDepartments = selectedDepartments;
+
+    //   // Update localStorage
+    //   localStorage.setItem("jobs", JSON.stringify(jobs));
+    //   console.log("940 Jobs Size:", JSON.stringify(jobs).length);
+
+    //   // Update state with the modified transmittals
+    //   setTransmittals([...job.transmittals]);
+
+    //   Swal.fire('Success', 'Departments notified successfully!', 'success');
+    // }
+
+    Swal.fire({
+      icon: 'Success',
+      title: 'Success',
+      text: 'Departments notified successfully!',
+    });
+
+    setNotifyModal(false);
+  };
+
+
+
   return (
     <MasterLayout>
       {/* Breadcrumb */}
@@ -985,14 +1174,14 @@ function EnggJobDetail() {
                   <Table bordered id="" className="">
                     <thead>
                       <tr>
-                        <th className="text-center" style={{ width: "12.5%" }}>Serial No.</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Department</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Description</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Revision</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Last Updated</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Status</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Owner</th>
-                        <th className="text-center" style={{ width: "12.5%" }} >Action</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }}>Serial No.</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Department</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Description</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Revision</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Last Updated</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Status</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Owner</th>
+                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1000,23 +1189,35 @@ function EnggJobDetail() {
                         <tr
                           key={index}
                           // className={`text-center ${getStatusClass(row.status)}`}
-                          style={{backgroundColor:getStatusClass(row.status)}}
+                          style={{ backgroundColor: getStatusClass(row.status) }}
                         >
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.serialNo}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.department}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.fileDescription}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.revision}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.lastUpdated}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.status}</td>
-                          <td className="text-center" onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}>{row.owner}</td>
-                          <td className="text-center d-flex align-items-center justify-content-center">
-                            <Button
-                              className="upload-btn text-center d-flex align-items-center justify-content-center"
-                              onClick={() => uploadFile(index)}
-                              variant="outline-secondary"
-                            >
-                              Upload
-                            </Button>
+                          <td className="text-center align-middle">{row.serialNo}</td>
+                          <td className="text-center align-middle">{row.department}</td>
+                          <td className="text-center align-middle">{row.fileDescription}</td>
+                          <td className="text-center align-middle">{row.revision}</td>
+                          <td className="text-center align-middle">{row.lastUpdated}</td>
+                          <td className="text-center align-middle">{row.status}</td>
+                          <td className="text-center align-middle">{row.owner}</td>
+                          <td className="text-center align-middle">
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+
+                              <Button
+                                className="upload-btn text-center d-flex align-items-center justify-content-center"
+                                onClick={() => uploadFile(index)}
+                                variant="outline-secondary"
+                                style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                              >
+                                Upload
+                              </Button>
+                              <Button
+                                className="upload-btn text-center d-flex align-items-center justify-content-center"
+                                onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}
+                                variant="outline-secondary"
+                                style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                              >
+                                VIew
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1088,7 +1289,7 @@ function EnggJobDetail() {
                                     : "New";
 
                                 return (
-                                  <tr key={index} className="text-center" style={{backgroundColor:getStatusClass(status)}}>
+                                  <tr key={index} className="text-center" style={{ backgroundColor: getStatusClass(status) }}>
                                     <td className="text-center">Rev {index}</td>
                                     <td className="text-center">
                                       <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
@@ -1804,67 +2005,241 @@ function EnggJobDetail() {
       <div className="card h-100 p-0 radius-12">
         <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between w-100" style={{ width: 100 + '%' }}>
           <h6 className="text-lg fw-semibold mb-0">Document Masterlist</h6>
-          <Button
-            type="button"
-            className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-20 py-11"
-            variant="primary"
-            onClick=""
+
+          {/* <Modal
+              show={createNewTransmittal}
+              onHide={() => setCreateNewTransmittal(false)}
+              size="lg"
+              aria-labelledby="contained-modal-title-vcenter"
+              centered
+              id="createTransmittalModal"
+            >
+              <Modal.Header closebutton>
+                <Modal.Title id="contained-modal-title-vcenter">
+                  Create Transmittal
+                </Modal.Title>
+              </Modal.Header>
+              <Modal.Body id="createTransmittalForm">
+                <div className="notify-department-selection px-32">
+                  <div className="text-center mb-3 col-12">
+                    <FloatingLabel
+                      controlId="floatingTextarea"
+                      label="Add Summary/Comments here"
+                      className="mb-3"
+                    >
+                      <Form.Control as="textarea" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Add Summary/Comments here" />
+                    </FloatingLabel>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Select Files</label>
+
+                    <Table striped bordered hover id="transmittalFilesTable">
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'center' }}>
+                            <Form.Check
+                              type="checkbox"
+                              checked={selectAll}
+                              onChange={toggleSelectAllFiles}
+                              className="d-flex align-items-center justify-content-center"
+                              label=""
+                              aria-label="Checkbox for following text input"
+                            />
+                          </th>
+                          <th style={{ textAlign: 'center' }}>File Name</th>
+                          <th style={{ textAlign: 'center' }}>Revision</th>
+                        </tr>
+                      </thead>
+                      <tbody id="transmittalFilesBody">
+                        {files.map((file) => (
+                          <tr key={file.srNo} className="text-center align-middle">
+                            <td style={{ textAlign: 'center' }}>
+                              <Form.Check
+                                type="checkbox"
+                                checked={file.selected || false}
+                                onChange={() => toggleFileSelection(file.srNo)}
+                              />
+                            </td>
+                            <td>{file.fileName}</td>
+                            <td>
+                              <Form.Select
+                                value={file.revision || ''}
+                                onChange={(e) =>
+                                  setFiles((prevFiles) =>
+                                    prevFiles.map((f) =>
+                                      f.srNo === file.srNo
+                                        ? { ...f, revision: e.target.value }
+                                        : f
+                                    )
+                                  )
+                                }
+                              >
+                                {file.revisions.reverse().map((rev) => (
+                                  <option key={rev} value={rev}>
+                                    Rev {rev}
+                                  </option>
+                                ))}
+                              </Form.Select>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+
+                <Button
+                  className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
+                  onClick={() => createTransmittal()}>
+                  Create
+                </Button>
+                <Button
+                  className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                  onClick={() => setCreateNewTransmittal(false)}>
+                  Close
+                </Button>
+              </Modal.Footer>
+          </Modal> */}
+
+          <Modal
+            show={notifyModal}
+            size="lg"
+            aria-labelledby="contained-modal-title-vcenter"
+            centered
+            id="notifyModal"
           >
-            Send Transmittal
-          </Button>
+            <Modal.Header>
+              <Modal.Title id="contained-modal-title-vcenter">
+                Select Departments to Notify
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <div className="notify-department-selection px-32">
+                <div className="text-center mb-3">
+                  <label>
+                    <input
+                      type="checkbox"
+                      className="department-checkbox form-check-input me-2"
+                      id="selectAllDepartments"
+                      checked={selectAll}
+                      onChange={handleSelectAllChange}
+                    />
+                    Select All
+                  </label>
+                </div>
+
+                <Table className="department-table w-100" style={{ maxWidth: '100%', tableLayout: 'fixed' }}>
+                  <tbody>
+                    {[
+                      ["PM", "Project Management"],
+                    ].map(([value, label], index) => (
+                      <tr key={index} style={{ width: "45%", margin: "10px" }}>
+                        <td colSpan={2}>
+                          <label className="d-flex align-items-center justify-content-between mx-3 gap-2">
+                            <input
+                              type="checkbox"
+                              className="department-checkbox form-check-input me-2"
+                              value={value}
+                              checked={selectedDepartments.includes(value)}
+                              onChange={() => handleCheckboxChange(value)}
+                            />
+                            {label}
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+
+              <Button
+                className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
+                onClick={handleSave2}>
+                Notify
+              </Button>
+              <Button
+                className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                onClick={() => setNotifyModal(false)}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+
         </div>
         <div className="card-body p-24">
           <div className="row row-cols-1 gy-4">
             <div className="col w-100">
               <div className="card shadow-none border bg-gradient-start-6 w-100">
                 <div className="card-body p-20">
-                  <Table bordered id="" className="">
-                    <thead>
-                      <tr>
-                        <th className="text-center">File</th>
-                        <th className="text-center">Equip. Tag</th>
-                        <th className="text-center">NMR Code</th>
-                        <th className="text-center">Client Code</th>
-                        <th className="text-center">Client Doc. No.</th>
-                        <th className="text-center">Company Doc No.</th>
-                        <th className="text-center">Planned Date</th>
-                        <th className="text-center">Owner (Email)</th>
-                        <th className="text-center">Upload</th>
-                      </tr>
-                    </thead>
-                    {
-                      masterlist?.ENG?.length > 0 ? (
-                        <tbody>
-                          {masterlist.ENG.map((file, index) => (
-                            <tr key={index}>
-                              <td className="text-center">{file.fileDescription}</td>
-                              <td className="text-center">{file.equipmentTag}</td>
-                              <td className="text-center">{file.nmrCode}</td>
-                              <td className="text-center">{file.clientCode || "N/A"}</td>
-                              <td className="text-center">{file.clientDocumentNo || "N/A"}</td>
-                              <td className="text-center">{file.zsDocumentNo || "N/A"}</td>
-                              <td className="text-center">{file.plannedDate || "N/A"}</td>
-                              <td className="text-center">{file.ownerEmail || "N/A"}</td>
-                              <td className="text-center">
-                                <Button className="upload-btn"
-                                  onClick={() => uploadFile(index)}
-                                  variant="outline-secondary"
-                                >
-                                  Upload
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      ) : (
-                        <tbody>
-                          <td colSpan={9} className="text-center">
-                            No masterlist entries available
-                          </td>
-                        </tbody>
-                      )
-                    }
-                  </Table>
+                  <div style={{ width: "100%" }}>
+
+                    <Table bordered id="" style={{ width: "100%", tableLayout: "fixed" }}>
+                      <thead style={{ width: "100%" }}>{/* mmmm */}
+                        <tr>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>File</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Equip. Tag</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>NMR</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Client Code</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Client Doc. No.</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Com. Doc No.</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Planned</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Owner</th>
+                          <th className="text-center align-middle" style={{ width: "11.1%" }}>Action</th>
+                        </tr>
+                      </thead>
+                      {
+                        masterlist?.ENG?.length > 0 ? (
+                          <tbody style={{ width: "100%" }}>
+                            {masterlist.ENG.map((file, index) => (
+                              <tr key={index}>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.fileDescription}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.equipmentTag}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.nmrCode}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.clientCode || "N/A"}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.clientDocumentNo || "N/A"}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.zsDocumentNo || "N/A"}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.plannedDate || "N/A"}</td>
+                                <td className="text-center align-middle" style={{ width: "11.1%" }}>{file.ownerEmail || "N/A"}</td>
+                                <td className="text-center align-middle">
+                                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+
+                                    <Button
+                                      className="upload-btn text-center d-flex align-items-center justify-content-center"
+                                      onClick={() => uploadFile(index)}
+                                      variant="outline-secondary"
+                                      style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                                    >
+                                      Upload
+                                    </Button>
+                                    <Button
+                                      className="upload-btn text-center d-flex align-items-center justify-content-center"
+                                      onClick={() => openNotifyModal()}
+                                      variant="outline-secondary"
+                                      style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                                    >
+                                      Notify
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        ) : (
+                          <tbody>
+                            <td colSpan={9} className="text-center">
+                              No masterlist entries available
+                            </td>
+                          </tbody>
+                        )
+                      }
+                    </Table>
+                  </div>
                 </div>
               </div>
             </div>

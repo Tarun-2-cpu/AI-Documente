@@ -1360,18 +1360,20 @@ function PmJobDetail() {
                       </h6>
                     </div>
                     <div className="card-body p-20">
-                      <Table>
-                        <tbody>
-                          <tr>
-                            <th>Transmittal ID :</th>
-                            <td>{outgoingTransmittal.id}</td>
-                          </tr>
-                          <tr>
-                            <th>Date :</th>
-                            <td>{outgoingTransmittal.date}</td>
-                          </tr>
-                        </tbody>
-                      </Table>
+                      <div style={{width: "100%" }}>
+                        <Table style={{width:"100%", tableLayout:"fixed"}}>
+                          <tbody>
+                            <tr>
+                              <th>Transmittal ID :</th>
+                              <td>{outgoingTransmittal.id}</td>
+                            </tr>
+                            <tr>
+                              <th>Date :</th>
+                              <td>{outgoingTransmittal.date}</td>
+                            </tr>
+                          </tbody>
+                        </Table>
+                      </div>
                     </div>
                   </div>
                 )
@@ -1411,16 +1413,16 @@ function PmJobDetail() {
                       <h6 className="text-lg fw-semibold mb-0">File List</h6>
                     </div>
                     <div className="card-body p-20 table-responsive">
-                      <div className="table-wrapper">
-                        <Table className="table table-striped">
+                      <div style={{width: "100%" }}>
+                        <Table bordered style={{width:"100%", tableLayout:"fixed"}}>
                           <thead>
                             <tr>
                               <th class="text-center align-middle" style={{ width: "10%" }}>Desc.</th>
                               <th class="text-center align-middle" style={{ width: "10%" }}>Equip Tag</th>
                               <th class="text-center align-middle" style={{ width: "10%" }}>NMR</th>
                               <th class="text-center align-middle"  style={{ width: "10%" }}>Client Code</th>
-                              <th class="text-center align-middle" style={{ width: "10%" }}>Client Doc. No.</th>
-                              <th class="text-center align-middle"  style={{ width: "10%" }}>Com. Doc No.</th>
+                              <th class="text-center align-middle table-cell" style={{ width: "10%" }}>Client Doc. No.</th>
+                              <th class="text-center align-middle table-cell"  style={{ width: "10%" }}>Com. Doc No.</th>
                               <th class="text-center align-middle"  style={{ width: "10%" }}>Revision</th>
                               <th class="text-center align-middle"  style={{ width: "10%" }}>Planned</th>
                               <th class="text-center align-middle"  style={{ width: "10%" }}>Owner</th>
@@ -1432,16 +1434,16 @@ function PmJobDetail() {
                                 const lastRevision = file.revisions?.[file.revisions.length - 1];
                               return (
                                 <tr>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.fileDescription || "-"}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.equipmentTag || ""}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.nmrCode || ""}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.clientCode || "-"}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.clientDocumentNo || "-"}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.zsDocumentNo || ""}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.revisions.length || ""}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.plannedDate || ""}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.ownerEmail || ""}</td>
-                                  <td class="text-center align-middle" style={{ width: "10%" }}>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.fileDescription || "-"}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.equipmentTag || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.nmrCode || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.clientCode || "-"}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.clientDocumentNo || "-"}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.zsDocumentNo || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.revisions.length || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.plannedDate || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.ownerEmail || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>
                                     <Link
                                       to={lastRevision?.fileLink || "#"}
                                       target="_blank"

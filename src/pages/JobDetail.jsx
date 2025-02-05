@@ -28,7 +28,9 @@ function JobDetail() {
 
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [selectedSrNo, setSelectedSrNo] = useState(null);
+  
   const [jobID, setJobID] = useState('');
+  
   const [jobName, setJobName] = useState('');
   const [description, setDescription] = useState('');
   const [poNumber, setPONumber] = useState('');
@@ -1574,7 +1576,7 @@ function JobDetail() {
               Create New Transmittal
             </Button>
 
-            {/* create transmittal modal */}
+            {/* create transmittal modal jjjj */}
             <Modal
               show={createNewTransmittal}
               onHide={() => setCreateNewTransmittal(false)}

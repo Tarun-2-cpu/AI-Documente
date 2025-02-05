@@ -14,4 +14,9 @@
     overflow-x: auto;
     white-space: nowrap;
   }
-  
+  .table-cell {
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;  /* Optional: Truncate long text with "..." */
+    white-space: normal; /* Allow text to wrap to the next line */
+  }
