@@ -176,7 +176,7 @@ function JobDetail() {
     console.log('State updated with incomingDocs:', newDocs);
 
     Array.from(files).forEach((file) => {
-      const srNo = `ZE-DOC-${jobID}-${newDocs.length + 1}`;
+      const srNo = `COM-DOC-${jobID}-${newDocs.length + 1}`;
       const fileType = file.name.split('.').pop().toLowerCase();
 
       const fileDetails = {
@@ -977,6 +977,29 @@ function JobDetail() {
     setCreateNewTransmittal(false);
   };
 
+  const deleteTransmittal = (transmittalID) => {
+    // Get jobs from local storage
+    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+    // Find the job that contains this transmittal
+    const updatedJobs = jobs.map((job) => {
+      if (!job.transmittals) return job; // Skip if no transmittals
+
+      // Filter out the transmittal that matches the given ID
+      const updatedTransmittals = job.transmittals.filter(transmittal => transmittal.id !== transmittalID);
+
+      return { ...job, transmittals: updatedTransmittals };
+    });
+
+    // Save updated jobs back to local storage
+    localStorage.setItem("jobs", JSON.stringify(updatedJobs));
+
+    // Update state
+    setJobs(updatedJobs);
+    alert(`Transmittal ID ${transmittalID} deleted successfully.`);
+  };
+
+
   const refreshTransmittalsTable = (job) => {
     if (job?.transmittals) {
       setTransmittals([...job.transmittals]); // Update state to re-render the table
@@ -1238,6 +1261,7 @@ function JobDetail() {
                         <Link to={doc.fileLink} download={doc.fileName} target="_blank" rel="noopener noreferrer" title="Download">
                           <i className="fas fa-download"></i>
                         </Link>
+                        <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
                         &nbsp;
                         <Link to="#"
                           onClick={(e) => {
@@ -1245,10 +1269,10 @@ function JobDetail() {
                             handleFileNameClick(doc.srNo)
                           }}
                           title="Add Additional Fields">
-                          <i className="fas fa-plus-circle"></i>
+                            <i className="fas fa-eye"></i>
                         </Link>
+                        <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
                         &nbsp;
-
                         <Link to="#"
                           onClick={(e) => {
                             e.preventDefault();
@@ -1503,24 +1527,39 @@ function JobDetail() {
                     <td className="align-middle" >{transmittal.date}</td>
                     <td className="align-middle" >{transmittal.summary}</td>
                     <td className="align-middle" >{transmittal.notifiedDepartments?.join(', ') || 'None'}</td>
-                    <td className="text-center align-middle" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
-                      <Button
-                        className="action-btn"
-                        variant="outline-secondary"
-                        style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                        onClick={() => openNotifyModal(transmittal.id)}
-                        disabled={transmittal.notifiedDepartments.length > 0}
-                      >
+                    <td className="text-center align-middle" >
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+                        <Button
+                          className="action-btn"
+                          variant="outline-secondary"
+                          style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                          onClick={() => openNotifyModal(transmittal.id)}
+                          disabled={transmittal.notifiedDepartments.length > 0}
+                        >
                           {transmittal.notifiedDepartments.length > 0 ? "Notified" : "Notify"}
-                      </Button>
-                      <Button
-                        className="action-btn px-2"
-                        variant="outline-secondary"
-                        onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}
-                        style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                      >
-                        View
-                      </Button>
+                        </Button>
+                        {transmittal.notifiedDepartments.length > 0 ? (
+                          <Button
+                            className="action-btn px-2"
+                            variant="outline-secondary"
+                            onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}
+                            style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                          >
+                            View
+                          </Button>
+
+                        ) : (
+                          <Button
+                            className="action-btn px-2"
+                            variant="outline-secondary"
+                            onClick={() => deleteTransmittal(transmittal.id)}
+                            style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                          >
+                            Delete
+                          </Button>
+                        )
+                        }
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1729,7 +1768,7 @@ function JobDetail() {
                               <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
                               <td>
                                 <Link
-                                  to = {file.revisions?.[file.revision]?.fileLink || "#"}
+                                  to={file.revisions?.[file.revisions.length - 1]?.fileLink || "#"}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Download"

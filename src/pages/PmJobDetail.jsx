@@ -8,7 +8,7 @@ import Table from 'react-bootstrap/Table';
 import Swal from 'sweetalert2';
 import Form from 'react-bootstrap/Form';
 import { Link } from 'react-router-dom';
-
+import "./Modal.css"
 
 function PmJobDetail() {
 
@@ -35,7 +35,7 @@ function PmJobDetail() {
   const [actionDate, setActionDate] = useState('');
   const [additionalComment, setAdditionalComment] = useState('');
   const [modalData, setModalData] = useState('');
-  const [detailModal,setDetailModal] = useState(false);
+  const [detailModal, setDetailModal] = useState(false);
 
 
   const [departments, setDepartments] = useState({
@@ -47,7 +47,13 @@ function PmJobDetail() {
   const [transmittalDetailModal, setTransmittalDetailModal] = useState(false);
   const [outgoingTransmittal, setOutgoingTransmittal] = useState(null);
 
-  const [outgoingTransmittalList, setOutgoingTransmittalList] = useState([]);
+  // const [outgoingTransmittalList, setOutgoingTransmittalList] = useState([]);
+
+  const [outgoingTransmittalList, setOutgoingTransmittalList] = useState(() => {
+    // Load transmittal list from local storage when component mounts
+    const savedTransmittals = localStorage.getItem("outgoingTransmittalList");
+    return savedTransmittals ? JSON.parse(savedTransmittals) : [];
+  });
 
   // outgoing
   const [activeTab, setActiveTab] = useState("ENG");
@@ -521,9 +527,36 @@ function PmJobDetail() {
   const closeOutgoingTransmittalModal = () => setOutTransmittal(false);
 
 
-  const createOutgoingTransmittal = () => {
-    const newTransmittalId = `ZM-TRAN-OUTGOING-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  // const createOutgoingTransmittal = () => {
+  //   const newTransmittalId = `COM-TRAN-OUTGOING-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+  //   const files = Object.entries(selectedFiles).flatMap(([department, files]) =>
+  //     Object.entries(files)
+  //       .filter(([_, isSelected]) => isSelected)
+  //       .map(([index]) => ({
+  //         ...departments[department][index],
+  //         department,
+  //       }))
+  //   );
+
+  //   const newTransmittal = {
+  //     id: newTransmittalId,
+  //     date: new Date().toLocaleString(),
+  //     files,
+  //   };
+
+  //   // Save new transmittal (assuming a saveTransmittal function exists)
+  //   saveTransmittal(newTransmittal);
+  //   setOutgoingTransmittal(newTransmittal);
+  //   closeOutgoingTransmittalModal();
+  //   setOutgoingTransmittalList([...outgoingTransmittalList, newTransmittal])
+  // };
+
+
+
+  const createOutgoingTransmittal = () => {
+    const newTransmittalId = `COM-TRAN-OUTGOING-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  
     const files = Object.entries(selectedFiles).flatMap(([department, files]) =>
       Object.entries(files)
         .filter(([_, isSelected]) => isSelected)
@@ -532,20 +565,31 @@ function PmJobDetail() {
           department,
         }))
     );
-
+  
     const newTransmittal = {
       id: newTransmittalId,
       date: new Date().toLocaleString(),
       files,
     };
-
-    // Save new transmittal (assuming a saveTransmittal function exists)
-    saveTransmittal(newTransmittal);
+  
+    // Update the transmittal list
+    const updatedTransmittalList = [...outgoingTransmittalList, newTransmittal];
+  
+    // Save in local storage
+    localStorage.setItem("outgoingTransmittalList", JSON.stringify(updatedTransmittalList));
+  
+    // Update state
+    setOutgoingTransmittalList(updatedTransmittalList);
     setOutgoingTransmittal(newTransmittal);
     closeOutgoingTransmittalModal();
-    setOutgoingTransmittalList([...outgoingTransmittalList, newTransmittal])
   };
 
+  useEffect(() => {
+    const savedTransmittals = localStorage.getItem("outgoingTransmittalList");
+    if (savedTransmittals) {
+      setOutgoingTransmittalList(JSON.parse(savedTransmittals));
+    }
+  }, []);
 
   console.log(outgoingTransmittal);
 
@@ -708,10 +752,7 @@ function PmJobDetail() {
                   <div className="card shadow-none border bg-gradient-end-3">
                     <div className="card-body p-20">
                       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div className="flex-grow-1">
-                          <h6 className="mb-2 text-xl">Job name : {currentJob.jobName}</h6>
-                          <p className="mb-0">Job ID : {currentJob.jobId}</p>
-                        </div>
+
                       </div>
                       <div className="mt-3 d-flex flex-wrap justify-content-between align-items-center gap-1">
                         <div className="">
@@ -1019,8 +1060,8 @@ function PmJobDetail() {
                                 </Link>
                               </td>
                               <td className="text-center align-middle">{revision.date}</td>
-                                    <td className="text-center align-middle">{lastFeedback.commentCode || "N/A"}</td>
-                                    <td className="text-center align-middle">{lastFeedback.additionalComment || "N/A"}</td>
+                              <td className="text-center align-middle">{lastFeedback.commentCode || "N/A"}</td>
+                              <td className="text-center align-middle">{lastFeedback.additionalComment || "N/A"}</td>
                               <td className="text-center align-middle">
                                 {lastFeedback.hash ? (
                                   <Link to={lastFeedback.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
@@ -1369,8 +1410,54 @@ function PmJobDetail() {
                     <div className="card-header border-bottom bg-base py-16 px-24">
                       <h6 className="text-lg fw-semibold mb-0">File List</h6>
                     </div>
-                    <div className="card-body p-20">
-                      <Table>
+                    <div className="card-body p-20 table-responsive">
+                      <div className="table-wrapper">
+                        <Table className="table table-striped">
+                          <thead>
+                            <tr>
+                              <th class="text-center align-middle" style={{ width: "10%" }}>Desc.</th>
+                              <th class="text-center align-middle" style={{ width: "10%" }}>Equip Tag</th>
+                              <th class="text-center align-middle" style={{ width: "10%" }}>NMR</th>
+                              <th class="text-center align-middle"  style={{ width: "10%" }}>Client Code</th>
+                              <th class="text-center align-middle" style={{ width: "10%" }}>Client Doc. No.</th>
+                              <th class="text-center align-middle"  style={{ width: "10%" }}>Com. Doc No.</th>
+                              <th class="text-center align-middle"  style={{ width: "10%" }}>Revision</th>
+                              <th class="text-center align-middle"  style={{ width: "10%" }}>Planned</th>
+                              <th class="text-center align-middle"  style={{ width: "10%" }}>Owner</th>
+                              <th class="text-center align-middle"  style={{ width: "10%" }}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {outgoingTransmittal.files.map((file) => {
+                                const lastRevision = file.revisions?.[file.revisions.length - 1];
+                              return (
+                                <tr>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.fileDescription || "-"}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.equipmentTag || ""}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.nmrCode || ""}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.clientCode || "-"}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.clientDocumentNo || "-"}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.zsDocumentNo || ""}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.revisions.length || ""}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.plannedDate || ""}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>{file.ownerEmail || ""}</td>
+                                  <td class="text-center align-middle" style={{ width: "10%" }}>
+                                    <Link
+                                      to={lastRevision?.fileLink || "#"}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title="Download"
+                                    >
+                                      View
+                                    </Link>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </Table>
+                      </div>
+                      {/* <Table>
                         <thead>
                           <tr>
                             <th style={{ width: "10%" }}>Description</th>
@@ -1386,30 +1473,37 @@ function PmJobDetail() {
                           </tr>
                         </thead>
                         <tbody>
-                          {/* {
+                          {
                             outgoingTransmittal.files.map((file) => {
                               return (
                                 <tr>
-                                  <td>${file.description || "-"}</td>
-                                  <td>${file.supportData.equipmentTag || ""}</td>
-                                  <td>${file.supportData.nmrCode || "-"}</td>
-                                  <td>${file.supportData.clientCode || "-"}</td>
-                                  <td>${
-                                    file.supportData.clientDocumentNo || "-"
+                                  <td style={{ width: "10%" }}>{file.fileDescription || "-"}</td>
+                                  <td style={{ width: "10%" }}>{file.equipmentTag || ""}</td>
+                                  <td style={{ width: "10%" }}>{file.nmrCode || ""}</td>
+                                  <td style={{ width: "10%" }}>{file.clientCode || "-"}</td>
+                                  <td style={{ width: "10%" }}>{
+                                    file.clientDocumentNo || "-"
                                   }</td>
-                                  <td>${file.supportData.zsDocumentNo || "-"}</td>
-                                  <td>${file.revision || "-"}</td>
-                                  <td>${file.supportData.plannedDate || "-"}</td>
-                                  <td>${file.supportData.ownerEmail || "-"}</td>
-                                  <td><a href="${
-                                  file.url
-                                }" target="_blank">View</a></td>
+                                  <td style={{ width: "10%" }}>{file.zsDocumentNo || ""}</td>
+                                  <td style={{ width: "10%" }}>{file.revision || ""}</td>
+                                  <td style={{ width: "10%" }}>{file.plannedDate || ""}</td>
+                                  <td style={{ width: "10%" }}>{file.ownerEmail || ""}</td>
+                                  <td style={{ width: "10%" }}>
+                                    <Link
+                                        to={file.revisions?.[file.revision]?.fileLink || "#"}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Download"
+                                      >
+                                        View
+                                      </Link>
+                                  </td>
                                 </tr>
                               )
                             })
-                          } */}
+                          }
                         </tbody>
-                      </Table>
+                      </Table> */}
                     </div>
                   </div>
                 ) :
@@ -1438,7 +1532,7 @@ function PmJobDetail() {
 
         </div>
       </div>
-    </MasterLayout>
+    </MasterLayout >
   )
 }
 

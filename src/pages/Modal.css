@@ -1,0 +1,17 @@
+.modal-body {
+    max-height: 70vh; /* Prevents modal from overflowing */
+    overflow-y: auto; /* Enables vertical scrolling inside modal */
+  }
+  
+  .table-wrapper {
+    max-width: 100%; /* Ensures the table fits inside */
+    overflow-x: auto; /* Enables horizontal scrolling if the table is too wide */
+  }
+  
+  .table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
