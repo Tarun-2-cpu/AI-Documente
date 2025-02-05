@@ -737,7 +737,7 @@ function PmJobDetail() {
 
       <div className="card h-100 p-0 radius-12 mt-24">
         <div className="card-header border-bottom bg-base py-16 px-24">
-          <h6 className="text-lg fw-semibold mb-0">Client Incoming Documents</h6>
+          <h6 className="text-lg fw-semibold mb-0">Client Documents</h6>
         </div>
         <div className="card-body p-24">
           <div className="row row-cols-xxxl-5 row-cols-lg-3 row-cols-sm-2 row-cols-1 gy-4 " id="transmittalsContainer">

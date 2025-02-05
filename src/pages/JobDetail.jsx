@@ -186,16 +186,16 @@ function JobDetail() {
         fileName: file.name,
         fileType,
         fileSize: formatFileSize(file.size),
-        lastModified: new Date(file.lastModified).toLocaleDateString(),
+        lastModified: new Date().toLocaleDateString('en-GB'),
         pageCount: fileType === 'pdf' ? 'Getting page count...' : '1 Page',
-        revision: 0, // Start revision count at 0
+        revision: 0,
         revisions: [
           {
             revision: 0, // First revision starts at 0
             hash: generateFileHash(file),
             fileLink: URL.createObjectURL(file),
             transmittalId: 'Pending',
-            uploadDate: new Date().toLocaleDateString(),
+            uploadDate: new Date().toLocaleDateString('en-GB'),
           },
         ],
         fileLink: URL.createObjectURL(file),
@@ -896,10 +896,14 @@ function JobDetail() {
       srNo: doc.srNo,
       fileName: doc.fileName,
       revisions: doc.revisions.map((rev) => rev.revision),
+      revisionFileName: doc.revisions.map((rev) => rev.fileName),
+      uploadDate: doc.revisions.map((rev) => rev.uploadDate)
     }));
     setFiles(fileData); // Update state with files
     setCreateNewTransmittal(true); // Open modal
   };
+
+  console.log("904",files)
 
   // Handle "Select All" checkbox
   const toggleSelectAllFiles = (e) => {
@@ -1223,14 +1227,14 @@ function JobDetail() {
             <Table bordered >
               <thead>
                 <tr>
-                  <th style={{ width: '15%', textAlign: "center" }}>Sr.NO.</th>
-                  <th style={{ width: '15%', textAlign: "center" }}>File Name</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>File Type</th>
-                  <th style={{ width: '15%', textAlign: "center" }}>File Size</th>
-                  <th style={{ width: '15%', textAlign: "center" }}>Last Modified</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>Page Count</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>Revision</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>Actions</th>
+                  <th className="align-middle" style={{ width: '15%', textAlign: "center" }}>Sr.NO.</th>
+                  <th className="align-middle" style={{ width: '15%', textAlign: "center" }}>File Name</th>
+                  <th className="align-middle" style={{ width: '10%', textAlign: "center" }}>File Type</th>
+                  <th className="align-middle" style={{ width: '15%', textAlign: "center" }}>File Size</th>
+                  <th className="align-middle" style={{ width: '15%', textAlign: "center" }}>Last Modified</th>
+                  <th className="align-middle" style={{ width: '10%', textAlign: "center" }}>Page Count</th>
+                  <th className="align-middle" style={{ width: '10%', textAlign: "center" }}>Revision</th>
+                  <th className="align-middle" style={{ width: '10%', textAlign: "center" }}>Actions</th>
                 </tr>
               </thead>
               <tbody id="permissionsTableBody">
@@ -1239,15 +1243,15 @@ function JobDetail() {
 
                   incomingDocs.map((doc) => (
                     <tr key={doc.srNo} className="text-center align-middle">
-                      <td>{doc.srNo}</td>
-                      <td>
+                      <td className="align-middle">{doc.srNo}</td>
+                      <td className="align-middle">
                         {doc.fileName}
                       </td>
-                      <td>{doc.fileType}</td>
-                      <td>{doc.fileSize}</td>
-                      <td>{doc.lastModified}</td>
-                      <td>{doc.pageCount}</td>
-                      <td>
+                      <td className="align-middle">{doc.fileType}</td>
+                      <td className="align-middle">{doc.fileSize}</td>
+                      <td className="align-middle">{doc.lastModified}</td>
+                      <td className="align-middle">{doc.pageCount}</td>
+                      <td className="align-middle">
                         <Link
                           to="#"
                           className="revision-link"
@@ -1259,7 +1263,7 @@ function JobDetail() {
                           {doc.revision}
                         </Link>
                       </td>
-                      <td>
+                      <td className="align-middle">
                         <Link to={doc.fileLink} download={doc.fileName} target="_blank" rel="noopener noreferrer" title="Download">
                           <i className="fas fa-download"></i>
                         </Link>
@@ -1337,6 +1341,7 @@ function JobDetail() {
                 <tr>
                   <th style={{ width: "25%", textAlign: "center" }}>Revision</th>
                   <th style={{ width: "25%", textAlign: "center" }}>Name</th>
+                  <th style={{ width: "25%", textAlign: "center" }}>Uploaded</th>
                   <th style={{ width: "25%", textAlign: "center" }}>Actions</th>
                   <th style={{ width: "25%", textAlign: "center" }}>Transmittal ID</th>
                 </tr>
@@ -1345,11 +1350,14 @@ function JobDetail() {
                 {Array.isArray(modalData.revisions) && modalData.revisions.length > 0 ? (
                   modalData.revisions.map((revision, index) => (
                     <tr key={index}>
-                      <td className="text-center">{revision.revision}</td> {/* Display revision count from the object */}
-                      <td className="text-center">
+                      <td className="text-center align-middle">{revision.revision}</td> {/* Display revision count from the object */}
+                      <td className="text-center align-middle">
                         {index === 0 ? modalData.fileName : revision.fileName ? revision.fileName : "N/A"}
                       </td>
-                      <td className="text-center">
+                      <td className="text-center align-middle">
+                        {index === 0 ? revision.uploadDate : revision.uploadDate}
+                      </td>
+                      <td className="text-center align-middle">
                         {typeof revision.fileLink === "string" ? (
                           <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", gap: "15px" }}>
                             <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center" }}>
@@ -1372,7 +1380,7 @@ function JobDetail() {
                         )}
                       </td>
 
-                      <td className="text-center">{index === 0 ? "DOC-1" : typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
+                      <td className="text-center align-middle">{index === 0 ? "DOC-1" : typeof revision.transmittalId === "string" ? revision.transmittalId : "N/A"}</td>
 
                     </tr>
                   ))
@@ -1382,7 +1390,6 @@ function JobDetail() {
                   </tr>
                 )}
               </tbody>
-
 
             </Table>
           </Modal.Body>
@@ -1402,9 +1409,6 @@ function JobDetail() {
             </Button>
           </Modal.Footer>
         </Modal>
-
-
-
 
         {/* FILE DETAILS MODAL */}
         <Modal
@@ -1608,7 +1612,7 @@ function JobDetail() {
                     <Table striped bordered hover id="transmittalFilesTable">
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'center' }}>
+                          <th style={{ textAlign: 'center'}}>
                             <Form.Check
                               type="checkbox"
                               checked={selectAll}
@@ -1625,15 +1629,22 @@ function JobDetail() {
                       <tbody id="transmittalFilesBody">
                         {files.map((file) => (
                           <tr key={file.srNo} className="text-center align-middle">
-                            <td style={{ textAlign: 'center' }}>
-                              <Form.Check
-                                type="checkbox"
-                                checked={file.selected || false}
-                                onChange={() => toggleFileSelection(file.srNo)}
-                              />
+                            <td style={{ textAlign: 'center', width:"20%" }} className="text-center align-middle">
+                              <div style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
+
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={file.selected || false}
+                                  onChange={() => toggleFileSelection(file.srNo)}
+                                  style={{display:'flex', alignItems:'center', justifyContent:'center'}}
+                                />
+                              </div>
                             </td>
-                            <td>{file.fileName}</td>
-                            <td>
+                            <td className="text-center align-middle" style={{width:"60%"}}>
+                                {/* {file.fileName} */}
+                                {file.revisionFileName?.[file.revisions.length - 1] || file.fileName}
+                            </td>
+                            <td className="text-center align-middle" style={{width:"20%"}}>
                               <Form.Select
                                 value={file.revision || ''}
                                 onChange={(e) =>
@@ -1762,7 +1773,7 @@ function JobDetail() {
                         <tbody>
                           {transmittalDetails.files.map((file, index) => (
                             <tr key={index} className="text-center align-middle">
-                              <td>{file.fileName}</td>
+                              <td>{file.revisions?.[file.revisions.length - 1]?.fileName || file.fileName}</td>
                               <td>{file.fileType?.toUpperCase()}</td>
                               <td>{file.fileSize}</td>
                               <td>{file.lastModified}</td>

@@ -176,19 +176,21 @@ function PmDashboard() {
             type="button"
             className="action-btn"
             variant="outline-secondary"
+            onClick={managePermission}
+          >
+            Manage Permissions
+          </Button>
+
+          <Button
+            type="button"
+            className="action-btn"
+            variant="outline-secondary"
             onClick={viewPermission}
           >
             View Permissions
           </Button>
 
-          <Button
-            type="button"
-            className="btn rounded-pill btn-primary-100 text-primary-600 radius-8 px-20 py-11"
-            variant="primary"
-            onClick={managePermission}
-          >
-            Manage Permissions
-          </Button>
+          
 
           <Modal
             show={modalShow}
@@ -333,6 +335,7 @@ function PmDashboard() {
                           type="checkbox"
                           checked={perm.read}
                           onChange={(e) => handleInputChange(index, 'read', e.target.checked)}
+                          disabled
                         />
                       </td>
                       <td style={{ textAlign: 'center' }}>
@@ -341,6 +344,7 @@ function PmDashboard() {
                           type="checkbox"
                           checked={perm.update}
                           onChange={(e) => handleInputChange(index, 'update', e.target.checked)}
+                          disabled
                         />
                       </td>
                       <td style={{ textAlign: 'center' }}>
@@ -349,6 +353,7 @@ function PmDashboard() {
                           type="checkbox"
                           checked={perm.notify}
                           onChange={(e) => handleInputChange(index, 'notify', e.target.checked)}
+                          disabled
                         />
                       </td>
                     </tr>
