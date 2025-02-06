@@ -103,7 +103,7 @@ function EnggJobDetail() {
       const revisionsData = jobs[jobIndex].masterlist.ENG[currentFileIndex]?.revisions || [];
       console.log("Retrieved Revisions from Local Storage: ", revisionsData);
       setRevisions(revisionsData);
-  }
+    }
 
     loadJobDetails();
     setTotalJobs(jobs);
@@ -746,6 +746,8 @@ function EnggJobDetail() {
   function openNotifyModal(id) {
     setNotifyModal(true);
     setCurrentTransmittalId(id);
+    handleSave();
+    setEngMasterlistModal(false)
   }
 
   const handleSelectAllChange = () => {
@@ -1207,7 +1209,6 @@ function EnggJobDetail() {
                         <th className="text-center align-middle" style={{ width: "12.5%" }} >Description</th>
                         <th className="text-center align-middle" style={{ width: "12.5%" }} >Revision</th>
                         <th className="text-center align-middle" style={{ width: "12.5%" }} >Last Updated</th>
-                        <th className="text-center align-middle" style={{ width: "12.5%" }} >Status</th>
                         <th className="text-center align-middle" style={{ width: "12.5%" }} >Owner</th>
                         <th className="text-center align-middle" style={{ width: "12.5%" }} >Action</th>
                       </tr>
@@ -1224,7 +1225,6 @@ function EnggJobDetail() {
                           <td className="text-center align-middle">{row.fileDescription}</td>
                           <td className="text-center align-middle">{row.revision}</td>
                           <td className="text-center align-middle">{row.lastUpdated}</td>
-                          <td className="text-center align-middle">{row.status}</td>
                           <td className="text-center align-middle">{row.owner}</td>
                           <td className="text-center align-middle">
                             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
@@ -1303,29 +1303,47 @@ function EnggJobDetail() {
                                 <th className="text-center" style={{ width: "14.5%" }}>Comment Code</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>PM Comment</th>
                                 <th className="text-center" style={{ width: "12.5%" }}>Return Date</th>
-                                <th className="text-center" style={{ width: "12.5%" }}>File Status</th>
                               </tr>
                             </thead>
                             <tbody id="">
                               {modalData.revisions.map((revision, index) => {
                                 const incomingFeedback = modalData.incomingRevisions[index];
                                 const lastFeedback = incomingFeedback?.[incomingFeedback.length - 1] || {};
+                                const commentCode = lastFeedback.commentCode;
                                 const status = ["F", "I", "R"].includes(lastFeedback.commentCode)
                                   ? "Approved"
                                   : ["A", "B", "C", "V"].includes(lastFeedback.commentCode)
                                     ? "Returned"
                                     : "New";
 
+                                    let bgColor;
+
+                                    switch(commentCode) {
+                                      case 'F-Reviewed without Comments':
+                                      case 'I-For Information':
+                                      case 'R-Reviewed as built':
+                                        bgColor = "#ccffcc";
+                                        break;
+                                      case 'A':
+                                      case 'B-Comment as Noted':
+                                      case 'C-Reviewed as Comments':
+                                      case 'V-Void':
+                                        bgColor = "#ffcccc";
+                                        break;
+                                      default:
+                                        bgColor = "#ffffcc";
+                                    }
+
                                 return (
-                                  <tr key={index} className="text-center" style={{ backgroundColor: getStatusClass(status) }}>
-                                    <td className="text-center">Rev {index}</td>
-                                    <td className="text-center">
+                                  <tr key={index} className="text-center">
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}> Rev {index}</td>
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}>
                                       <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                         {revision.hash}
                                       </Link>
                                     </td>
-                                    <td className="text-center">{revision.date}</td>
-                                    <td className="text-center">
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{revision.date}</td>
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}>
                                       {lastFeedback.hash ? (
                                         <Link to={lastFeedback.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                           {lastFeedback.name}
@@ -1334,10 +1352,9 @@ function EnggJobDetail() {
                                         "N/A"
                                       )}
                                     </td>
-                                    <td className="text-center">{lastFeedback.commentCode || "N/A"}</td>
-                                    <td className="text-center">{lastFeedback.additionalComment || "N/A"}</td>
-                                    <td className="text-center">{lastFeedback.date || "N/A"}</td>
-                                    <td className="text-center">{status}</td>
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{lastFeedback.commentCode || "N/A"}</td>
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{lastFeedback.additionalComment || "N/A"}</td>
+                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{lastFeedback.date || "N/A"}</td>
                                   </tr>
                                 );
                               })}
@@ -1498,162 +1515,6 @@ function EnggJobDetail() {
                 {/*Files Details*/}
 
                 <Modal
-                  show={false}
-                  size="xl"
-                  centered={true}
-                  scrollable
-                  onHide={() => setEngMasterlistModal(false)}
-                >
-                  <Modal.Header closeButton>
-                    <Modal.Title id="contained-modal-title-vcenter">
-                      Engineering Masterlist
-                    </Modal.Title>
-                  </Modal.Header>
-
-                  <Modal.Body>
-                    <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
-                    <table className="table table-bordered">
-                      <thead>
-                        <tr>
-                          <th>File Desc</th>
-                          <th>Equip Tag</th>
-                          <th>NMR Code</th>
-                          <th>Client Code</th>
-                          <th>Client Doc No.</th>
-                          <th>Company Doc. No.</th>
-                          <th>Planned Date</th>
-                          <th>Owner</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((row, index) => (
-                          <tr key={index}>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.fileDescription}
-                                onChange={(e) =>
-                                  updateRow(index, "fileDescription", e.target.value)
-                                }
-                                placeholder="File Description"
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.equipmentTag}
-                                onChange={(e) =>
-                                  updateRow(index, "equipmentTag", e.target.value)
-                                }
-                                placeholder="Equipment Tag"
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.nmrCode}
-                                onChange={(e) => updateRow(index, "nmrCode", e.target.value)}
-                                placeholder="NMR Code"
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.clientCode}
-                                onChange={(e) =>
-                                  updateRow(index, "clientCode", e.target.value)
-                                }
-                                placeholder="Client Code"
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.clientDocumentNo}
-                                onChange={(e) =>
-                                  updateRow(index, "clientDocumentNo", e.target.value)
-                                }
-                                placeholder="Client Doc No."
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                value={row.zsDocumentNo}
-                                onChange={(e) =>
-                                  updateRow(index, "zsDocumentNo", e.target.value)
-                                }
-                                placeholder="Company Doc. No."
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="date"
-                                value={row.plannedDate}
-                                onChange={(e) =>
-                                  updateRow(index, "plannedDate", e.target.value)
-                                }
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="email"
-                                value={row.ownerEmail}
-                                onChange={(e) =>
-                                  updateRow(index, "ownerEmail", e.target.value)
-                                }
-                                placeholder="Owner Email"
-                                className="form-control"
-                              />
-                            </td>
-                            <td>
-                              <button
-                                className="btn btn-danger"
-                                onClick={() => deleteRow(index)}
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    <Button
-                      className="btn rounded-pill radius-8 px-3 py-2 mb-3"
-                      variant="outline-secondary"
-                      onClick={addRow}
-                    >
-                      Add Row
-                    </Button>
-                  </Modal.Body>
-
-                  <Modal.Footer>
-                    <Button
-                      className="btn btn-primary"
-                      onClick={handleSave}
-                    >
-                      {isUpdate ? "Update Masterlist" : "Save Masterlist"}
-                    </Button>
-                    <Button
-                      className="btn btn-danger"
-                      onClick={() => setEngMasterlistModal(false)}
-                    >
-                      Close
-                    </Button>
-                  </Modal.Footer>
-                </Modal>
-
-
-                <Modal
                   show={engMasterlistModal}
                   size="lg"
                   aria-labelledby="contained-modal-title-vcenter"
@@ -1668,134 +1529,11 @@ function EnggJobDetail() {
                   </Modal.Header>
 
                   <Modal.Body>
-                    <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
                     <Table style={{ border: "none" }} className="table table-bordered">
                       {/* <tbody> */}
                       {rows.map((row, index) => (
-                        // <tbody key={index} className="d-flex align-items-center justify-content-evenly flex-wrap">
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>File Desc</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="text"
-                        //         value={row.fileDescription}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "fileDescription", e.target.value)
-                        //         }
-                        //         placeholder="File Description"
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>Equip Tag</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="text"
-                        //         value={row.equipmentTag}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "equipmentTag", e.target.value)
-                        //         }
-                        //         placeholder="Equipment Tag"
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>NMR Code</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="text"
-                        //         value={row.nmrCode}
-                        //         onChange={(e) => updateRow(index, "nmrCode", e.target.value)}
-                        //         placeholder="NMR Code"
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>Client Code</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="text"
-                        //         value={row.clientCode}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "clientCode", e.target.value)
-                        //         }
-                        //         placeholder="Client Code"
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>Client Doc No.</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="text"
-                        //         value={row.clientDocumentNo}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "clientDocumentNo", e.target.value)
-                        //         }
-                        //         placeholder="Client Doc No."
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>Company Doc. No.</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="text"
-                        //         value={row.zsDocumentNo}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "zsDocumentNo", e.target.value)
-                        //         }
-                        //         placeholder="Company Doc. No."
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "100%" }}>
-                        //     <td style={{ width: "20%" }}>Planned Date</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="date"
-                        //         value={row.plannedDate}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "plannedDate", e.target.value)
-                        //         }
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "0%" }}>
-                        //     <td style={{ width: "20%" }}>Owner</td>
-                        //     <td style={{ width: "80%" }}>
-                        //       <input
-                        //         type="email"
-                        //         value={row.ownerEmail}
-                        //         onChange={(e) =>
-                        //           updateRow(index, "ownerEmail", e.target.value)
-                        //         }
-                        //         placeholder="Owner Email"
-                        //         className="form-control"
-                        //       />
-                        //     </td>
-                        //   </td>
-                        //   <td style={{ width: "20%", marginTop: "20px" }}>
-                        //     <td>Actions</td>
-                        //     <td style={{ width: "100%" }}>
-                        //       <button
-                        //         className="btn btn-danger"
-                        //         onClick={() => deleteRow(index)}
-                        //       >
-                        //         Delete
-                        //       </button>
-                        //     </td>
-                        //   </td>
-                        // </tbody>
 
-                        <tbody key={index} className="w-100" style={{borderStyle: "hidden"}}>
+                        <tbody key={index} className="w-100" style={{ borderStyle: "hidden" }}>
                           {[
                             { label: "File Desc", field: "fileDescription", type: "text", placeholder: "File Description" },
                             { label: "Equip Tag", field: "equipmentTag", type: "text", placeholder: "Equipment Tag" },
@@ -1806,8 +1544,8 @@ function EnggJobDetail() {
                             { label: "Planned Date", field: "plannedDate", type: "date" },
                             { label: "Owner", field: "ownerEmail", type: "email", placeholder: "Owner Email" }
                           ].map(({ label, field, type, placeholder }) => (
-                            <tr key={field} className="w-100" style={{width:100 + "%", borderStyle: "hidden"}}>
-                              <td className="w-100" style={{width:100 + "%", borderStyle: "hidden"}}>
+                            <tr key={field} className="w-100" style={{ width: 100 + "%", borderStyle: "hidden" }}>
+                              <td className="w-100" style={{ width: 100 + "%", borderStyle: "hidden" }}>
                                 <div className="d-flex flex-column w-100">
                                   <label className="fw-bold">{label}</label>
                                   <input
@@ -1826,9 +1564,13 @@ function EnggJobDetail() {
                           <tr className="w-100">
                             <td className="w-100">
                               <div className="d-flex justify-content-end mt-3">
-                                <button className="btn btn-danger" onClick={() => deleteRow(index)}>
+                                <Button
+                                  className="btn rounded-pill"
+                                  variant="outline-danger"
+                                  onClick={() => deleteRow(index)}
+                                >
                                   Delete
-                                </button>
+                                </Button>
                               </div>
                             </td>
                           </tr>
@@ -1849,218 +1591,25 @@ function EnggJobDetail() {
 
                   <Modal.Footer>
                     <Button
-                      className="btn btn-primary"
+                      className="btn rounded-pill"
+                      variant="outline-primary"
                       onClick={handleSave}
                     >
-                      {isUpdate ? "Update Masterlist" : "Save Masterlist"}
+                      Save
                     </Button>
                     <Button
-                      className="btn btn-danger"
-                      onClick={() => setEngMasterlistModal(false)}
-                    >
-                      Close
-                    </Button>
-                  </Modal.Footer>
-                </Modal>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                {/* {selectedRequest && ( */}
-                <Modal
-                  show={false}
-                  size="lg"
-                  aria-labelledby="contained-modal-title-vcenter"
-                  centered
-                  id="revisionModal"
-                  style={{ display: engMasterlistModal ? "flex" : "none" }}
-                  onHide={() => setEngMasterlistModal(false)}
-                >
-                  <Modal.Header closeButton>
-                    <Modal.Title id="contained-modal-title-vcenter">
-                      Engineering Masterlist
-                    </Modal.Title>
-                  </Modal.Header>
-
-                  <Modal.Body>
-                    <h6>{isUpdate ? "Update Masterlist" : "Create Masterlist"}</h6>
-                    {/* {rows.map((row, index) => ( */}
-
-                    <div className="modal-body" >
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="">File Desc</label>
-                        </div>
-                        <input type="text"
-                          value={fileDesc}
-                          className="form-control"
-                          onChange={(e) =>
-                            // updateRow(index, "fileDescription", e.target.value)
-                            setFileDesc(e.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="" id="">Equip Tag</label>
-                          <input type="text"
-                            className="form-control"
-                            value={equipTag}
-                            onChange={(e) =>
-                              // updateRow(index, "EquipmentTag", e.target.value)
-                              setEquipTag(e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="" id="">NMR Code</label>
-                        </div>
-                        <input type="text"
-                          className="form-control"
-                          id="JobName"
-                          value={nmr}
-                          onChange={(e) =>
-                            // updateRow(index, "nmrCode", e.target.value)
-                            setNMR(e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="" id="">Client Code	</label>
-                        </div>
-                        <input type="text"
-                          className="form-control"
-                          value={clientCode}
-                          onChange={(e) =>
-                            // updateRow(index, "clientCode", e.target.value)
-                            setClientCode(e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="" id="">Client Doc No.</label>
-                        </div>
-                        <input type="text"
-                          className="form-control"
-                          value={clientDocNo}
-                          onChange={(e) =>
-                            // updateRow(index, "clientDocumentNo", e.target.value)
-                            setClientDocNo(e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="">Company Doc. No.</label>
-                        </div>
-                        <div className="">
-                          <input type="text"
-                            className="form-control"
-                            value={zsDocNo}
-                            onChange={(e) =>
-                              // updateRow(index, "zsDocumentNo", e.target.value)
-                              setZSDocNo(e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="" id="">Planned Date</label>
-                        </div>
-                        <input type="date"
-                          className="form-control mb-3"
-                          value={pDate}
-                          onChange={(e) =>
-                            // updateRow(index, "plannedDate", e.target.value)
-                            setPDate(e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="">
-                          <label className="">Owner</label>
-                        </div>
-                        <div className="">
-                          <input type="email"
-                            className="form-control"
-                            value={owner}
-                            onChange={(e) =>
-                              // updateRow(index, "ownerEmail", e.target.value)
-                              setOwner(e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mb-3 ">
-                        <div className="d-flex align-items-center justify-content-end w-full">
-                          <Button className="btn rounded-pill radius-8 px-3 py-2" variant="outline-danger" onClick={() => deleteRow()}>Delete</Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ))} */}
-                    <Button
-                      className="btn rounded-pill radius-8 px-20 py-11"
+                      className="btn rounded-pill"
                       variant="outline-secondary"
-                      onClick={addRow}
+                      onClick={() => {
+                        setEngMasterlistModal(false)
+                        openNotifyModal()
+                      }}
                     >
-                      Add Row
-                    </Button>
-
-                  </Modal.Body>
-
-                  <Modal.Footer>
-                    <Button
-                      className="btn rounded-pill btn-primary-100 text-primary-900 radius-8 px-20 py-11"
-                      onClick={handleSave}
-                    >
-                      {isUpdate ? "Update Masterlist" : "Save Masterlist"}
-                    </Button>
-                    <Button
-                      className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                      onClick={() => setEngMasterlistModal(false)}
-                    >
-                      Close
+                      Notify and Submit
                     </Button>
                   </Modal.Footer>
                 </Modal>
-                {/* )} */}
+
 
               </div>
             </div>
@@ -2074,103 +1623,6 @@ function EnggJobDetail() {
         <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center justify-content-between w-100" style={{ width: 100 + '%' }}>
           <h6 className="text-lg fw-semibold mb-0">Document Masterlist</h6>
 
-          {/* <Modal
-              show={createNewTransmittal}
-              onHide={() => setCreateNewTransmittal(false)}
-              size="lg"
-              aria-labelledby="contained-modal-title-vcenter"
-              centered
-              id="createTransmittalModal"
-            >
-              <Modal.Header closebutton>
-                <Modal.Title id="contained-modal-title-vcenter">
-                  Create Transmittal
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body id="createTransmittalForm">
-                <div className="notify-department-selection px-32">
-                  <div className="text-center mb-3 col-12">
-                    <FloatingLabel
-                      controlId="floatingTextarea"
-                      label="Add Summary/Comments here"
-                      className="mb-3"
-                    >
-                      <Form.Control as="textarea" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Add Summary/Comments here" />
-                    </FloatingLabel>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Select Files</label>
-
-                    <Table striped bordered hover id="transmittalFilesTable">
-                      <thead>
-                        <tr>
-                          <th style={{ textAlign: 'center' }}>
-                            <Form.Check
-                              type="checkbox"
-                              checked={selectAll}
-                              onChange={toggleSelectAllFiles}
-                              className="d-flex align-items-center justify-content-center"
-                              label=""
-                              aria-label="Checkbox for following text input"
-                            />
-                          </th>
-                          <th style={{ textAlign: 'center' }}>File Name</th>
-                          <th style={{ textAlign: 'center' }}>Revision</th>
-                        </tr>
-                      </thead>
-                      <tbody id="transmittalFilesBody">
-                        {files.map((file) => (
-                          <tr key={file.srNo} className="text-center align-middle">
-                            <td style={{ textAlign: 'center' }}>
-                              <Form.Check
-                                type="checkbox"
-                                checked={file.selected || false}
-                                onChange={() => toggleFileSelection(file.srNo)}
-                              />
-                            </td>
-                            <td>{file.fileName}</td>
-                            <td>
-                              <Form.Select
-                                value={file.revision || ''}
-                                onChange={(e) =>
-                                  setFiles((prevFiles) =>
-                                    prevFiles.map((f) =>
-                                      f.srNo === file.srNo
-                                        ? { ...f, revision: e.target.value }
-                                        : f
-                                    )
-                                  )
-                                }
-                              >
-                                {file.revisions.reverse().map((rev) => (
-                                  <option key={rev} value={rev}>
-                                    Rev {rev}
-                                  </option>
-                                ))}
-                              </Form.Select>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </div>
-                </div>
-              </Modal.Body>
-              <Modal.Footer>
-
-                <Button
-                  className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
-                  onClick={() => createTransmittal()}>
-                  Create
-                </Button>
-                <Button
-                  className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
-                  onClick={() => setCreateNewTransmittal(false)}>
-                  Close
-                </Button>
-              </Modal.Footer>
-          </Modal> */}
 
           <Modal
             show={notifyModal}
@@ -2285,14 +1737,14 @@ function EnggJobDetail() {
                                     >
                                       Upload
                                     </Button>
-                                    <Button
+                                    {/* <Button
                                       className="upload-btn text-center d-flex align-items-center justify-content-center"
                                       onClick={() => openNotifyModal()}
                                       variant="outline-secondary"
                                       style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
                                     >
                                       Notify
-                                    </Button>
+                                    </Button> */}
                                   </div>
                                 </td>
                               </tr>
