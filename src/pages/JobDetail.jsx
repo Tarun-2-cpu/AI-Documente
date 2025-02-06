@@ -28,9 +28,9 @@ function JobDetail() {
 
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [selectedSrNo, setSelectedSrNo] = useState(null);
-  
+
   const [jobID, setJobID] = useState('');
-  
+
   const [jobName, setJobName] = useState('');
   const [description, setDescription] = useState('');
   const [poNumber, setPONumber] = useState('');
@@ -72,6 +72,14 @@ function JobDetail() {
     docType: 'GA',
     preview: null,
   })
+
+  const [selectedRevisions, setSelectedRevisions] = useState(
+    files.reduce((acc, file) => {
+      acc[file.srNo] = file.revisions[0]?.revision || 0; // Default to the latest revision
+      return acc;
+    }, {})
+  );
+
 
 
   const fileInputRef = useRef(null);
@@ -892,18 +900,25 @@ function JobDetail() {
     }
 
     // Prepare file data with revisions
-    const fileData = job.incomingDocs.map((doc) => ({
-      srNo: doc.srNo,
-      fileName: doc.fileName,
-      revisions: doc.revisions.map((rev) => rev.revision),
-      revisionFileName: doc.revisions.map((rev) => rev.fileName),
-      uploadDate: doc.revisions.map((rev) => rev.uploadDate)
-    }));
-    setFiles(fileData); // Update state with files
-    setCreateNewTransmittal(true); // Open modal
+    const fileData = job.incomingDocs.map((doc) => {
+      const revisionFileNames = doc.revisions.map((rev) => rev.fileName);
+      if (!revisionFileNames[0]) {
+        revisionFileNames[0] = doc.fileName;
+      }
+
+      return {
+        srNo: doc.srNo,
+        fileName: doc.fileName,
+        revisions: doc.revisions.map((rev) => rev.revision),
+        revisionFileName: revisionFileNames,
+        uploadDate: doc.revisions.map((rev) => rev.uploadDate),
+      };
+    });
+    setFiles(fileData);
+    setCreateNewTransmittal(true);
   };
 
-  console.log("904",files)
+  console.log("914", files)
 
   // Handle "Select All" checkbox
   const toggleSelectAllFiles = (e) => {
@@ -944,10 +959,16 @@ function JobDetail() {
 
     const selectedFiles = files
       .filter((file) => file.selected)
-      .map((file) => ({
-        srNo: file.srNo,
-        revision: file.revision,
-      }));
+      .map((file) => {
+        const fileObject = file.fileObject || null;
+        return{
+
+          srNo: file.srNo,
+          revision: selectedRevisions[file.srNo],
+          file: file.fileName,
+          fileLink: fileObject ? URL.createObjectURL(fileObject) : null,
+        }
+      });
 
     const newTransmittal = {
       id: transmittalID,
@@ -958,14 +979,30 @@ function JobDetail() {
       notifiedDepartments: [],
     };
 
-    const updatedIncomingDocs = [...(job.incomingDocs || [])];
-    selectedFiles.forEach((selected) => {
-      const doc = updatedIncomingDocs.find((d) => d.srNo === selected.srNo);
-      const revision = doc?.revisions.find((rev) => rev.revision === selected.revision);
-      if (revision) {
-        revision.transmittalID = transmittalID;
+    // const updatedIncomingDocs = [...(job.incomingDocs || [])];
+    // selectedFiles.forEach((selected) => {
+    //   const doc = updatedIncomingDocs.find((d) => d.srNo === selected.srNo);
+    //   const revision = doc?.revisions.find((rev) => rev.revision === selected.revision);
+    //   if (revision) {
+    //     revision.transmittalID = transmittalID;
+    //   }
+    // });
+
+    const updatedIncomingDocs = [...(job.incomingDocs || [])].map((doc) => {
+      if (selectedFiles.some((selected) => selected.srNo === doc.srNo)) {
+        return {
+          ...doc,
+          revisions: doc.revisions.map((rev) =>
+            rev === selectedRevisions[doc.srNo]
+              ? { ...rev, transmittalID }
+              : rev
+          ),
+        };
       }
+      return doc;
     });
+
+    
 
     const updatedJobs = jobs.map((j) =>
       j.jobId === jobID
@@ -1275,7 +1312,7 @@ function JobDetail() {
                             handleFileNameClick(doc.srNo)
                           }}
                           title="Add Additional Fields">
-                            <i className="fas fa-eye"></i>
+                          <i className="fas fa-eye"></i>
                         </Link>
                         <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
                         &nbsp;
@@ -1612,7 +1649,7 @@ function JobDetail() {
                     <Table striped bordered hover id="transmittalFilesTable">
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'center'}}>
+                          <th style={{ textAlign: 'center' }}>
                             <Form.Check
                               type="checkbox"
                               checked={selectAll}
@@ -1626,47 +1663,60 @@ function JobDetail() {
                           <th style={{ textAlign: 'center' }}>Revision</th>
                         </tr>
                       </thead>
-                      <tbody id="transmittalFilesBody">
-                        {files.map((file) => (
-                          <tr key={file.srNo} className="text-center align-middle">
-                            <td style={{ textAlign: 'center', width:"20%" }} className="text-center align-middle">
-                              <div style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
 
-                                <Form.Check
-                                  type="checkbox"
-                                  checked={file.selected || false}
-                                  onChange={() => toggleFileSelection(file.srNo)}
-                                  style={{display:'flex', alignItems:'center', justifyContent:'center'}}
-                                />
-                              </div>
-                            </td>
-                            <td className="text-center align-middle" style={{width:"60%"}}>
-                                {/* {file.fileName} */}
-                                {file.revisionFileName?.[file.revisions.length - 1] || file.fileName}
-                            </td>
-                            <td className="text-center align-middle" style={{width:"20%"}}>
-                              <Form.Select
-                                value={file.revision || ''}
-                                onChange={(e) =>
-                                  setFiles((prevFiles) =>
-                                    prevFiles.map((f) =>
-                                      f.srNo === file.srNo
-                                        ? { ...f, revision: e.target.value }
-                                        : f
-                                    )
-                                  )
-                                }
-                              >
-                                {file.revisions.reverse().map((rev) => (
-                                  <option key={rev} value={rev}>
-                                    Rev {rev}
-                                  </option>
-                                ))}
-                              </Form.Select>
-                            </td>
-                          </tr>
-                        ))}
+                      <tbody id="transmittalFilesBody">
+                        {files.map((file) => {
+                          const selectedRevisionIndex = file.revisions.findIndex(
+                            (rev) => rev === parseInt(selectedRevisions[file.srNo], 10)
+                          );
+
+                          // Get the corresponding file name for the selected revision
+                          const selectedFileName = file.revisionFileName[selectedRevisionIndex] || file.fileName;
+
+                          return (
+
+                            <tr key={file.srNo} className="text-center align-middle">
+                              <td style={{ textAlign: 'center', width: "20%" }} className="text-center align-middle">
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+                                  <Form.Check
+                                    type="checkbox"
+                                    checked={file.selected || false}
+                                    onChange={() => toggleFileSelection(file.srNo)}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  />
+                                </div>
+                              </td>
+
+                              <td className="text-center align-middle" style={{ width: "60%" }}>
+                                {selectedFileName}
+                              </td>
+
+                              <td className="text-center align-middle" style={{ width: "20%" }}>
+                                <Form.Select
+                                  value={selectedRevisions[file.srNo] || file.revisions[0]}
+                                  onChange={(e) => {
+                                    const newRevision = parseInt(e.target.value, 10);
+                                    setSelectedRevisions((prev) => ({
+                                      ...prev,
+                                      [file.srNo]: newRevision,
+                                    }));
+                                  }}
+                                >
+                                  {file.revisions.map((rev, index) => (
+                                    <option key={rev} value={rev}>
+                                      {/* {`Rev ${rev} - ${file.revisionFileName[index] || file.fileName}`} */}
+                                      {`Rev - ${rev}`}
+                                    </option>
+                                  ))}
+                                </Form.Select>
+                              </td>
+                            </tr>
+                          )
+
+                        })}
                       </tbody>
+
                     </Table>
                   </div>
                 </div>
@@ -1773,7 +1823,7 @@ function JobDetail() {
                         <tbody>
                           {transmittalDetails.files.map((file, index) => (
                             <tr key={index} className="text-center align-middle">
-                              <td>{file.revisions?.[file.revisions.length - 1]?.fileName || file.fileName}</td>
+                              <td>{file.revisions?.[file.revision]?.fileName || file.fileName}</td>
                               <td>{file.fileType?.toUpperCase()}</td>
                               <td>{file.fileSize}</td>
                               <td>{file.lastModified}</td>
@@ -1781,7 +1831,7 @@ function JobDetail() {
                               <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
                               <td>
                                 <Link
-                                  to={file.revisions?.[file.revisions.length - 1]?.fileLink || "#"}
+                                  to={file.revisions?.[file.revision]?.fileLink || "#"}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Download"

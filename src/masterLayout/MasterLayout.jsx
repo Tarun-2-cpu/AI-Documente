@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
-import ClearCacheButton  from "./ClearCacheButton ";
+import ClearCacheButton from "./ClearCacheButton ";
 
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
@@ -80,7 +80,7 @@ const MasterLayout = ({ children }) => {
   return (
     <section className={mobileMenu ? "overlay active" : "overlay "}>
       {/* sidebar */}
-      <aside className={sidebarActive ? "sidebar active " : mobileMenu ? "sidebar sidebar-open" : "sidebar"}>
+      {/* <aside className={sidebarActive ? "sidebar active " : mobileMenu ? "sidebar sidebar-open" : "sidebar"}>
         <button onClick={mobileMenuControl} type="button" className="sidebar-close-btn">
           <Icon icon="radix-icons:cross-2" />
         </button>
@@ -105,30 +105,24 @@ const MasterLayout = ({ children }) => {
             </li>
           </ul>
         </div>
-      </aside>
+      </aside> */}
 
-      <main className={sidebarActive ? "dashboard-main active" : "dashboard-main"}>
-        <div className="navbar-header">
+      <main className="">
+        <div className="navbar-header" style={{paddingTop :0 + "px", paddingBottom :0 + "px"}}>
           <div className="row align-items-center justify-content-between">
             <div className="col-auto">
               <div className="d-flex flex-wrap align-items-center gap-4">
-                <button type="button" className="sidebar-toggle" onClick={sidebarControl}>
-                  {
-                    sidebarActive ? (<Icon
-                      icon="iconoir:arrow-right"
-                      className="icon text-2xl non-active"
-                    />) : (<Icon
-                      icon="heroicons:bars-3-solid"
-                      className="icon text-2xl non-active "
-                    />)
-                  }
-                </button>
-                <button onClick={mobileMenuControl} type="button" className="sidebar-mobile-toggle">
-                  <Icon
-                    icon="heroicons:bars-3-solid"
-                    className="icon"
-                  />
-                </button>
+                <div>
+                  <Link to="/" className="sidebar-logo">
+                    <p className="light-logo"
+                      style={{ fontSize: 16 + 'px', textAlign: 'center', margin: 0+"px" }}
+                    >
+                      <b>
+                        AI DOCUMENTE
+                      </b>
+                    </p>
+                  </Link>
+                </div>
               </div>
             </div>
             <div className="col-auto">
@@ -213,7 +207,7 @@ const MasterLayout = ({ children }) => {
         </div>
 
         {/* dashboard-main-body */}
-        <div className="dashboard-main-body">{children}</div>
+        <div className="dashboard-main-body" style = {{padding : 1.57 + "rem"}}>{children}</div>
 
         {/* Footer section */}
         <footer className="d-footer">

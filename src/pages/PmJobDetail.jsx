@@ -21,7 +21,7 @@ function PmJobDetail() {
   const [date, setDate] = useState('');
   const [transmittal, setTransmittal] = useState(null);
   const [transmittalModal, setTransmittalModal] = useState(false);
-  const [revisionIndex, setRevisionIndex] = useState('')
+  const [revisionIndex, setRevisionIndex] = useState(0)
   const [outgoingTransmittals, setOutgoingTransmittals] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
 
@@ -91,7 +91,7 @@ function PmJobDetail() {
 
       if (file && file.revisions) {
         setRevisions(file.revisions);
-        setRevisionIndex(file.revisions.length - 1); // Default to latest revision
+        setRevisionIndex(file.revisions ? file.revisions.length - 1 : 0);
       }
     }
 
@@ -226,7 +226,8 @@ function PmJobDetail() {
     }
   };
 
-  const openIncomingModal = (fileDesc) => {
+  const openIncomingModal = (dep,fileDesc,row) => {
+    console.log(dep,fileDesc,row)
     const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
     const currentJobId = localStorage.getItem("currentJobId");
     const currentJob = jobs.find((job) => job.jobId === currentJobId);
@@ -239,9 +240,7 @@ function PmJobDetail() {
     for (const files of Object.values(currentJob.masterlist)) {
       file = files.find((f) => f.fileDescription === fileDesc);
       if (file) {
-        latestRevisionIndex = file.revisions?.length
-          ? file.revisions.length - 1
-          : 0;
+        latestRevisionIndex = file.revisions?.length? file.revisions.length - 1 : 0;
         break;
       }
     }
@@ -249,9 +248,10 @@ function PmJobDetail() {
     if (file) {
       setFileDescription(fileDesc);
       setRevisions(file.revisions || []);
-      setSelectedRevision(latestRevisionIndex.toString());
-      setShowModal(true); // Show the modal
+      setSelectedRevision(latestRevisionIndex);
+      setShowModal(true);
     }
+    console.log("file revisions selected file",file.revisions)
   };
 
   const handleRevisionChange = (e) => {
@@ -967,7 +967,7 @@ function PmJobDetail() {
                         <Button
                           className="action-btn px-2"
                           variant="outline-secondary"
-                          onClick={() => openIncomingModal(row.fileDescription)}
+                          onClick={() => openIncomingModal(row.department, row.fileDescription, row)}
                           style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
                         >
                           Respond
@@ -1041,7 +1041,7 @@ function PmJobDetail() {
                           <th className="text-center" style={{ width: "12.5%" }}>File Status</th>
                         </tr>
                       </thead>
-                      <tbody id="">
+                      <tbody id="">{/* kkkk */}
                         {modalData.revisions.map((revision, index) => {
                           const incomingFeedback = modalData.incomingRevisions[index];
                           const lastFeedback = incomingFeedback?.[incomingFeedback.length - 1] || {};
@@ -1115,7 +1115,7 @@ function PmJobDetail() {
                   value={revisionIndex}
                   onChange={(e) => setRevisionIndex(e.target.value)}
                 >
-                  {revisions.map((_, index) => (
+                  {revisions.reverse().map((_, index) => (
                     <option key={index} value={index}>
                       Rev {index}
                     </option>
@@ -1257,7 +1257,7 @@ function PmJobDetail() {
                 {Object.keys(departments).map((dept) => (
                   <button
                     key={dept}
-                    className={`tab-button btn rounded-pill ${activeTab === dept ? "btn-primary" : "btn-outline-secondary"
+                    className={`tab-button btn rounded-pill ${activeTab === dept ? "btn-secondary" : "btn-outline-secondary"
                       }`}
                     onClick={() => setActiveTab(dept)}
                   >
@@ -1279,14 +1279,17 @@ function PmJobDetail() {
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th className="d-flex align-items-center justify-content-center text-center align-self-center m-auto">
-                          <input
-                            type="checkbox"
-                            className="form-check-input"
-                            id="selectAllFiles"
-                            checked={selectAll}
-                            onChange={toggleSelectAllFiles}
-                          />
+                        <th className="text-center align-middle" style={{padding:0 + "px"}}>
+                          <div className="" style={{ display:"flex", alignItems:"center", justifyContent:"center"}}>
+                            <input
+                              type="checkbox"
+                              className="form-check-input text-center align-middle"
+                              id="selectAllFiles"
+                              style={{display:"flex", alignItems:"center", justifyContent:"center"}}
+                              checked={selectAll}
+                              onChange={toggleSelectAllFiles}
+                            />
+                          </div>
                         </th>
                         <th className="text-center">File Description</th>
                         <th className="text-center">Revision</th>
@@ -1296,7 +1299,7 @@ function PmJobDetail() {
                     <tbody>
                       {files.map((file, index) => (
                         <tr key={index}>
-                          <td className="d-flex align-items-center justify-content-center text-center align-self-center m-auto">
+                          <td className="d-flex align-items-center justify-content-center text-center align-self-center align-middle" style={{marginX:"auto", marginY:"auto"}}>
                             <input
                               type="checkbox"
                               className="form-check-input"

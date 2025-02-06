@@ -8,16 +8,16 @@ import { useNavigate } from 'react-router-dom';
 function BDDashboard() {
   // let { createChartThree } = useReactApexChart()
   const [showModal, setShowModal] = useState(false);
-  const [jobId, setJobId] = useState('');
-  const [jobName, setJobName] = useState('');
-  const [description, setDescription] = useState('');
-  const [poNumber, setPoNumber] = useState('');
+  const [jobId, setJobId] = useState('Job01');
+  const [jobName, setJobName] = useState('Project-Manager');
+  const [description, setDescription] = useState('New-Job');
+  const [poNumber, setPoNumber] = useState('PO#11');
   const [poDate, setPoDate] = useState('');
   const [jobs, setJobs] = useState([]);
   const [file, setFile] = useState('');
-  const [client, setClient] = useState('');
-  const [epc, setEPC] = useState('');
-  const [endUser, setEndUser] = useState('');
+  const [client, setClient] = useState('Aramco');
+  const [epc, setEPC] = useState('EPC#001');
+  const [endUser, setEndUser] = useState('EU#123');
   
 
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ function BDDashboard() {
       return;
     }
 
-    // Create a new job object
+    // Create a new job object  
     const newJob = {
       jobId,
       jobName,
