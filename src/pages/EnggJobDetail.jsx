@@ -99,11 +99,20 @@ function EnggJobDetail() {
     setOutgoingTransmittals(outgoingTrans);
     const jobIndex = jobs.findIndex((job) => job.jobId === jobId);
 
-    if (jobIndex !== -1) {
+    // if (jobIndex !== -1) {
+    //   const revisionsData = jobs[jobIndex].masterlist.ENG[currentFileIndex]?.revisions || [];
+    //   console.log("Retrieved Revisions from Local Storage: ", revisionsData);
+    //   setRevisions(revisionsData);
+    // }
+
+    if (jobIndex !== -1 && jobs[jobIndex] && jobs[jobIndex].masterlist && jobs[jobIndex].masterlist.ENG) {
       const revisionsData = jobs[jobIndex].masterlist.ENG[currentFileIndex]?.revisions || [];
       console.log("Retrieved Revisions from Local Storage: ", revisionsData);
       setRevisions(revisionsData);
+    } else {
+        console.error("Job data or masterlist is undefined");
     }
+  
 
     loadJobDetails();
     setTotalJobs(jobs);
@@ -820,7 +829,7 @@ function EnggJobDetail() {
 
 
   return (
-    <MasterLayout>
+    <MasterLayout title="Engineering Dashboard">
       {/* Breadcrumb */}
       <Breadcrumb title="Job Detail - Engineering" />
 
@@ -1214,13 +1223,15 @@ function EnggJobDetail() {
                       </tr>
                     </thead>
                     <tbody>
-                      {masterListRows.map((row, index) => (
+                      {masterListRows
+                        .filter(row => row.department === "ENG")
+                        .map((row, index) => (
                         <tr
                           key={index}
                           // className={`text-center ${getStatusClass(row.status)}`}
                           style={{ backgroundColor: getStatusClass(row.status) }}
                         >
-                          <td className="text-center align-middle">{row.serialNo}</td>
+                          <td className="text-center align-middle">{index+1}</td>
                           <td className="text-center align-middle">{row.department}</td>
                           <td className="text-center align-middle">{row.fileDescription}</td>
                           <td className="text-center align-middle">{row.revision}</td>

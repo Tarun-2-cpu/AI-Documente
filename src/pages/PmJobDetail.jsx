@@ -36,7 +36,7 @@ function PmJobDetail() {
   const [additionalComment, setAdditionalComment] = useState('');
   const [modalData, setModalData] = useState('');
   const [detailModal, setDetailModal] = useState(false);
-
+  const[responded,setResponded] = useState(false);
 
   const [departments, setDepartments] = useState({
     ENG: [],
@@ -368,6 +368,7 @@ function PmJobDetail() {
     }
 
     closeModal();
+    setResponded(true)
   }
 
   // Function to update file counts across departments
@@ -595,7 +596,7 @@ function PmJobDetail() {
 
 
   return (
-    <MasterLayout>
+    <MasterLayout title="PM Dashboard">
 
       {/* Breadcrumb */}
       <Breadcrumb title="Project Management Job Details" />
@@ -956,7 +957,13 @@ function PmJobDetail() {
                     }
                 
                     const commentCode = lastFeedback.commentCode;
-                    let bgColor = commentCode ? "white" : "#ccffcc";
+                    let bgColor;
+
+                    // if(responded){
+                    //   bgColor="white"
+                    // }else{
+                    //   bgColor="green"
+                    // }
 
                     return (
 

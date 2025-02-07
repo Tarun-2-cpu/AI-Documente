@@ -96,7 +96,7 @@ function BDDashboard() {
   };
 
   return (
-    <MasterLayout>
+    <MasterLayout title="BD Daashboard">
 
       {/* Breadcrumb */}
       <Breadcrumb title="Business Development" />

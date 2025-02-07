@@ -56,7 +56,7 @@ function EnggDashboard() {
 
 
   return (
-    <MasterLayout>
+    <MasterLayout tilte="Engineering Dashboard">
 
       {/* Breadcrumb */}
       <Breadcrumb title="Engineering Dashboard" />

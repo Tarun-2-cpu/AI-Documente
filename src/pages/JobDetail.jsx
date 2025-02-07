@@ -1191,7 +1191,7 @@ function JobDetail() {
 
 
   return (
-    <MasterLayout>
+    <MasterLayout title="BD Dashboard">
 
       {/* Breadcrumb */}
       <Breadcrumb title="Job Detail Page" />

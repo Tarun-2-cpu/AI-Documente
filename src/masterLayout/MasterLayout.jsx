@@ -4,7 +4,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import ClearCacheButton from "./ClearCacheButton ";
 
-const MasterLayout = ({ children }) => {
+const MasterLayout = ({ children,title }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const location = useLocation(); // Hook to get the current route
@@ -14,7 +14,7 @@ const MasterLayout = ({ children }) => {
     const handleDropdownClick = (event) => {
       event.preventDefault();
       const clickedLink = event.currentTarget;
-      const clickedDropdown = clickedLink.closest('.dropdown');
+      const clickedDropdown = clickedLink.closest('.drofpdown');
 
       if (!clickedDropdown) return;
 
@@ -110,6 +110,7 @@ const MasterLayout = ({ children }) => {
       <main className="">
         <div className="navbar-header" style={{paddingTop :0 + "px", paddingBottom :0 + "px"}}>
           <div className="row align-items-center justify-content-between">
+           
             <div className="col-auto">
               <div className="d-flex flex-wrap align-items-center gap-4">
                 <div>
@@ -125,9 +126,27 @@ const MasterLayout = ({ children }) => {
                 </div>
               </div>
             </div>
+
+            <div className="col-auto">
+              <div className="d-flex flex-wrap align-items-center gap-4">
+                <div>
+                  <Link to="/" className="sidebar-logo">
+                    <p className="light-logo"
+                      style={{ fontSize: 18 + 'px', textAlign: 'center', margin: 0+"px" }}
+                    >
+                      <b>
+                        <h6>{title}</h6>
+                      </b>
+                    </p>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+
             <div className="col-auto">
               <div className="d-flex flex-wrap align-items-center gap-3">
-                <ClearCacheButton />
+                {/* <ClearCacheButton /> */}
                 {/* ThemeToggleButton */}
                 <ThemeToggleButton />
                 <div className="dropdown d-none d-sm-inline-block">
@@ -203,6 +222,7 @@ const MasterLayout = ({ children }) => {
 
               </div>
             </div>
+
           </div>
         </div>
 
@@ -213,7 +233,7 @@ const MasterLayout = ({ children }) => {
         <footer className="d-footer">
           <div className="row align-items-center justify-content-between">
             <div className="col-auto">
-              <p className="mb-0">© 2024. All Rights Reserved.</p>
+              {/* <p className="mb-0">© 2024. All Rights Reserved.</p> */}
             </div>
             <div className="col-auto">
               <p className="mb-0">

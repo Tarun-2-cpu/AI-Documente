@@ -89,7 +89,7 @@ function PmDashboard() {
 
 
   return (
-    <MasterLayout>
+    <MasterLayout title="PM Dashboard">
 
       {/* Breadcrumb */}
       <Breadcrumb title="Project Management Dashboard" />

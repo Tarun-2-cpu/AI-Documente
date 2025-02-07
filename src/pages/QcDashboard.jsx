@@ -40,7 +40,7 @@ function QcDashboard() {
 
 
   return (
-    <MasterLayout>
+    <MasterLayout title="QA/QC Dashboard">
 
       {/* Breadcrumb */}
       <Breadcrumb title="QA/QC Dashboard"/>
