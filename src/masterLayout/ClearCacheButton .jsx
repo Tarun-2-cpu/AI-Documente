@@ -1,7 +1,7 @@
 import React from "react";
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
-
+import Button from 'react-bootstrap/Button';
 
 function ClearCacheButton() {
 
@@ -16,18 +16,17 @@ function ClearCacheButton() {
   };
 
   return (
-    <button
-      className="btn btn-danger rounded-pill px-3 py-2"
+    <Button
+      className="action-btn"
+      variant="outline-danger"
       onClick={clearLocalStorage}
       style={{
-        backgroundColor: "#dc3545",
-        color: "#fff",
-        border: "none",
         cursor: "pointer",
       }}
     >
+      <i class="fas fa-trash-alt" style={{ marginRight: 6 + "px" }}></i>
       Clear Cache
-    </button>
+    </Button>
   );
 }
 

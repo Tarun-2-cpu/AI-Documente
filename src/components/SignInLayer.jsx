@@ -1,18 +1,19 @@
 import { Icon } from '@iconify/react/dist/iconify.js'
 import React, { useState } from 'react'
-import { Link,useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import ClearCacheButton from '../masterLayout/ClearCacheButton ';
+import Button from 'react-bootstrap/Button';
 
 
 const SignInLayer = () => {
 
-    const [email,setEmail] = useState('');
-    const [password,setPassword] = useState('');
-    const[error,setError] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
     let navigate = useNavigate();
 
-    function handleSubmit(e){
+    function handleSubmit(e) {
 
         if (email === 'bd@company.com') {
             localStorage.setItem('loggedInUser', 'BD');
@@ -27,9 +28,53 @@ const SignInLayer = () => {
             localStorage.setItem('loggedInUser', 'QAQC');
             navigate('/qa-qc-dashboard');
         } else {
-            setError ('Invalid login credentials. Please try again.');
+            setError('Invalid login credentials. Please try again.');
         }
     }
+
+    const saveDataToFile = () => {
+        const data = localStorage.getItem("jobs"); // Yaha localStorage ki key change kar sakte ho
+        if (!data) {
+            alert("No data found in local storage.");
+            return;
+        }
+
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "backup.json"; // File ka naam
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+
+
+    const restoreDataFromFile = (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            alert("No file selected.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const jsonData = JSON.parse(e.target.result);
+                localStorage.setItem("jobs", JSON.stringify(jsonData)); // Yaha key change kar sakte ho
+                alert("Data restored successfully!");
+            } catch (error) {
+                alert("Invalid file format.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+
+
 
 
 
@@ -58,7 +103,7 @@ const SignInLayer = () => {
                                 className="form-control h-56-px bg-neutral-50 radius-12"
                                 placeholder="Email"
                                 value={email}
-                                onChange={(e)=>{setEmail(e.target.value)}}
+                                onChange={(e) => { setEmail(e.target.value) }}
                             />
                         </div>
                         <div className="position-relative mb-20">
@@ -72,7 +117,7 @@ const SignInLayer = () => {
                                     id="your-password"
                                     placeholder="Password"
                                     value={password}
-                                    onChange={(e)=>{setPassword(e.target.value)}}
+                                    onChange={(e) => { setPassword(e.target.value) }}
                                 />
                             </div>
                             <span
@@ -88,8 +133,25 @@ const SignInLayer = () => {
                             {" "}
                             Sign In
                         </button>
-                        <div style = {{ display: "flex", alignItems:"center", justifyContent: "end", width: "100%", marginTop: "30px"  }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: 100 + "%", marginTop: 30 + "px" }}>
+                            
+                        <Button
+                                onClick={saveDataToFile}
+                                className="action-btn"
+                                variant="outline-success"
+                            >
+                                <i class="fas fa-cloud-download-alt" style={{ marginRight: 6 + 'px' }}></i>
+                                Save Data
+                            </Button>
+
+                            <label class="btn btn-outline-primary">
+                                <i class="fas fa-upload" style={{ marginRight: 6 + 'px' }}></i> Upload File
+                                <input type="file" accept="application/json" onChange={restoreDataFromFile} className="form-control" hidden />
+                            </label>
+                            
                             <ClearCacheButton />
+                            
+                            
                         </div>
                     </form>
                 </div>

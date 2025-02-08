@@ -961,7 +961,7 @@ function JobDetail() {
       .filter((file) => file.selected)
       .map((file) => {
         const fileObject = file.fileObject || null;
-        return{
+        return {
 
           srNo: file.srNo,
           revision: selectedRevisions[file.srNo],
@@ -1002,7 +1002,7 @@ function JobDetail() {
       return doc;
     });
 
-    
+
 
     const updatedJobs = jobs.map((j) =>
       j.jobId === jobID
@@ -1634,14 +1634,22 @@ function JobDetail() {
               <Modal.Body id="createTransmittalForm">
                 <div className="notify-department-selection px-32">
                   <div className="text-center mb-3 col-12">
-                    <FloatingLabel
-                      controlId="floatingTextarea"
-                      label="Add Summary/Comments here"
-                      className="mb-3"
-                    >
-                      <Form.Control as="textarea" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Add Summary/Comments here" />
-                    </FloatingLabel>
+                    <input
+                      type="text"
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      placeholder="Add Summary/Comments here"
+                      style={{
+                        border: "1px solid #ccc",
+                        padding: "10px",
+                        width: "100%",
+                        textAlign: "left",
+                        borderRadius: "5px",
+                        outline: "none",
+                      }}
+                    />
                   </div>
+
 
                   <div className="form-group">
                     <label>Select Files</label>
