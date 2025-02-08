@@ -1261,7 +1261,7 @@ function JobDetail() {
         <div className="card-body p-24">
           <div className="">
 
-            <Table bordered >
+            <Table bordered>
               <thead>
                 <tr>
                   <th className="align-middle" style={{ width: '15%', textAlign: "center" }}>Sr.NO.</th>
@@ -1289,16 +1289,21 @@ function JobDetail() {
                       <td className="align-middle">{doc.lastModified}</td>
                       <td className="align-middle">{doc.pageCount}</td>
                       <td className="align-middle">
-                        <Link
-                          to="#"
-                          className="revision-link"
-                          onClick={(e) => {
-                            e.preventDefault(); // Prevent default anchor behavior
-                            handleRevisionClick(jobID, doc.srNo);
-                          }}
-                        >
-                          {doc.revision}
-                        </Link>
+                        <div style={{display:"flex", alignItems:"center", justifyContent:"space-evenly"}}>
+
+                        {doc.revision}
+                        <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
+                          <Link
+                            to="#"
+                            className="revision-link"
+                            onClick={(e) => {
+                              e.preventDefault(); // Prevent default anchor behavior
+                              handleRevisionClick(jobID, doc.srNo);
+                            }}
+                          >
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                          </Link>
+                        </div>
                       </td>
                       <td className="align-middle">
                         <Link to={doc.fileLink} download={doc.fileName} target="_blank" rel="noopener noreferrer" title="Download">
@@ -1657,7 +1662,7 @@ function JobDetail() {
                     <Table striped bordered hover id="transmittalFilesTable">
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'center' }}>
+                          <th style={{ textAlign: 'center', width: 20+ "%" }}>
                             <Form.Check
                               type="checkbox"
                               checked={selectAll}
@@ -1667,8 +1672,8 @@ function JobDetail() {
                               aria-label="Checkbox for following text input"
                             />
                           </th>
-                          <th style={{ textAlign: 'center' }}>File Name</th>
-                          <th style={{ textAlign: 'center' }}>Revision</th>
+                          <th style={{ textAlign: 'center', width: 80+"%" }}>File Revision</th>
+                          {/* <th style={{ textAlign: 'center' }}>Revision</th> */}
                         </tr>
                       </thead>
 
@@ -1696,9 +1701,9 @@ function JobDetail() {
                                 </div>
                               </td>
 
-                              <td className="text-center align-middle" style={{ width: "60%" }}>
+                              {/* <td className="text-center align-middle" style={{ width: "60%" }}>
                                 {selectedFileName}
-                              </td>
+                              </td> */}
 
                               <td className="text-center align-middle" style={{ width: "20%" }}>
                                 <Form.Select
@@ -1711,10 +1716,10 @@ function JobDetail() {
                                     }));
                                   }}
                                 >
-                                  {file.revisions.map((rev, index) => (
+                                  {file.revisions.slice().reverse().map((rev, index) => (
                                     <option key={rev} value={rev}>
-                                      {/* {`Rev ${rev} - ${file.revisionFileName[index] || file.fileName}`} */}
-                                      {`Rev - ${rev}`}
+                                      {`Rev ${rev} -   ${file.revisionFileName[index] || file.fileName}`}
+                                      {/* {`Rev - ${rev}`} */}
                                     </option>
                                   ))}
                                 </Form.Select>
