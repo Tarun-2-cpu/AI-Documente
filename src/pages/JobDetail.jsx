@@ -554,7 +554,6 @@ function JobDetail() {
   };
 
   const handleRevisionClick = (jobId, srNo) => {
-    
     openRevisionHistoryModal(jobId, srNo)
     openRevisionModal(jobId, srNo)
   };
@@ -1448,7 +1447,7 @@ function JobDetail() {
                             <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center" }}>
                               View
                             </Link>
-                            <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 10px" }}></span>
+                            {/* <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 10px" }}></span>
                             <Link to="#"
                               onClick={(e) => {
                                 e.preventDefault();
@@ -1458,7 +1457,7 @@ function JobDetail() {
                               style={{ display: "flex", alignItems: "center" }}
                             >
                               <i className="fas fa-times-circle text-danger"></i>
-                            </Link>
+                            </Link> */}
                           </div>
                         ) : (
                           "No File Link"
@@ -1624,32 +1623,14 @@ function JobDetail() {
                           className="action-btn"
                           variant="outline-secondary"
                           style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                          onClick={() => openNotifyModal(transmittal.id)}
-                          disabled={transmittal.notifiedDepartments.length > 0}
+                          onClick={() =>
+                            transmittal.notifiedDepartments.length > 0
+                              ? viewTransmittalDetails(transmittal.date, transmittal.id)
+                              : openNotifyModal(transmittal.id)
+                          }
                         >
-                          {transmittal.notifiedDepartments.length > 0 ? "Notified" : "Notify"}
+                          {transmittal.notifiedDepartments.length > 0 ? "View" : "Notify"}
                         </Button>
-                        {transmittal.notifiedDepartments.length > 0 ? (
-                          <Button
-                            className="action-btn px-2"
-                            variant="outline-secondary"
-                            onClick={() => viewTransmittalDetails(transmittal.date, transmittal.id)}
-                            style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                          >
-                            View
-                          </Button>
-
-                        ) : (
-                          <Button
-                            className="action-btn px-2"
-                            variant="outline-secondary"
-                            onClick={() => deleteTransmittal(transmittal.id)}
-                            style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                          >
-                            Delete
-                          </Button>
-                        )
-                        }
                       </div>
                     </td>
                   </tr>
