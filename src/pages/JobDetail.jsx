@@ -460,50 +460,11 @@ function JobDetail() {
   };
 
   // Revision modal start
-  const openRevisionHistoryModal = (srNo) => {
-    console.log("openRevisionHistoryModal triggered with srNo:", srNo);
-
-    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const jobId = getQueryParam('jobId');
-    console.log("Retrieved jobId:", jobId);
-    console.log("Retrieved jobs array:", jobs);
-
-    const job = jobs.find((j) => j.jobId === jobId);
-
-    if (!job) {
-      console.error("Error: Job or incomingDocs not found");
-      showErrorAlert("Job not found.");
-      return;
-    }
-
-    const file = job.incomingDocs.find((doc) => doc.srNo === srNo);
-
-    if (!file || !file.revisions) {
-      console.error("Error: File or revisions not found");
-      showErrorAlert("File or revisions not found.");
-      return;
-    }
-
-    setModalData({
-      fileName: file.fileName,
-      revisions: file.revisions, // Ensure revisions is an array
-    });
-
-    console.log("Modal data prepared:", {
-      fileName: file.fileName,
-      revisions: file.revisions,
-    });
-
-    // setModalShow(true);
-  };
-
-  //work here
-  // const openRevisionHistoryModal = (srNo) => {
+  // const openRevisionHistoryModal = (jobId, srNo) => {
   //   console.log("openRevisionHistoryModal triggered with srNo:", srNo);
 
-  //   // Fetch updated jobs from localStorage
   //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-  //   const jobId = getQueryParam('jobId');
+  //   // const jobId = getQueryParam('jobId');
   //   console.log("Retrieved jobId:", jobId);
   //   console.log("Retrieved jobs array:", jobs);
 
@@ -523,26 +484,68 @@ function JobDetail() {
   //     return;
   //   }
 
-  //   // Force update modal data with fresh data from localStorage
   //   setModalData({
   //     fileName: file.fileName,
-  //     revisions: [...file.revisions],  // Ensure fresh reference
+  //     revisions: file.revisions, // Ensure revisions is an array
   //   });
 
-  //   console.log("Updated modal data:", {
+  //   console.log("Modal data prepared:", {
   //     fileName: file.fileName,
   //     revisions: file.revisions,
   //   });
 
-  //   setRevisionModalShow(true); // Open the modal
+  //   // setModalShow(true);
   // };
+
+
+  const openRevisionHistoryModal = (jobId, srNo) => {
+    console.log("openRevisionHistoryModal triggered with srNo:", srNo);
+
+    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+    console.log("Retrieved jobs array:", jobs);
+
+    const job = jobs.find((j) => j.jobId === jobId);
+
+    if (!job) {
+      console.error("Error: Job or incomingDocs not found");
+      showErrorAlert("Job not found.");
+      return;
+    }
+
+    const file = job.incomingDocs.find((doc) => doc.srNo === srNo);
+
+    if (!file || !file.revisions || file.revisions.length === 0) {
+      console.error("Error: File or revisions not found");
+      showErrorAlert("File or revisions not found.");
+      return;
+    }
+
+    // 🔹 Get last revision details
+    const lastRevision = file.revisions[file.revisions.length - 1];
+
+    // 🔹 Update file name & file link with last revision
+    file.fileName = lastRevision.fileName || file.fileName;
+    file.fileLink = lastRevision.fileLink || file.fileLink;
+
+    setModalData({
+      fileName: file.fileName,
+      fileLink: file.fileLink,
+      revisions: file.revisions,
+    });
+
+    console.log("Modal data prepared:", {
+      fileName: file.fileName,
+      fileLink: file.fileLink,
+      revisions: file.revisions,
+    });
+  };
 
 
   const openRevisionModal = (jobId, srNo) => {
     console.log("openRevisionModal triggered with jobId:", jobId, "and srNo:", srNo);
 
-    setSelectedJobId(jobId); // Set the selected job ID
-    setSelectedSrNo(srNo);  // Set the selected serial number
+    setSelectedJobId(jobId);
+    setSelectedSrNo(srNo);
     setRevisionModalShow(true);
 
     console.log("Selected job ID:", jobId);
@@ -551,7 +554,8 @@ function JobDetail() {
   };
 
   const handleRevisionClick = (jobId, srNo) => {
-    openRevisionHistoryModal(srNo)
+    
+    openRevisionHistoryModal(jobId, srNo)
     openRevisionModal(jobId, srNo)
   };
 
@@ -960,13 +964,30 @@ function JobDetail() {
     const selectedFiles = files
       .filter((file) => file.selected)
       .map((file) => {
-        const fileObject = file.fileObject || null;
+
+        const fileObject = file.fileObject;
+
+        const selectedRevision = selectedRevisions[file.srNo] !== undefined
+          ? selectedRevisions[file.srNo]
+          : file.revisions[file.revisions.length - 1];
+
+        const revisionIndex = file.revisions.indexOf(selectedRevision);
+        const revisionFileName = file.revisionFileName?.[revisionIndex] || file.fileName;
+        const revisionFileObject = file.revisionFileObjects?.[revisionIndex] || file.fileObject;
+
+        // Debugging Logs
+        console.log(`File: ${file.fileName}`);
+        console.log(`Selected Revision: ${selectedRevision}`);
+        console.log(`Revision Index: ${revisionIndex}`);
+        console.log(`Revision File Name: ${revisionFileName}`);
+        console.log(`Revision File Object:`, revisionFileObject);
+
         return {
 
           srNo: file.srNo,
-          revision: selectedRevisions[file.srNo],
-          file: file.fileName,
-          fileLink: fileObject ? URL.createObjectURL(fileObject) : null,
+          revision: selectedRevision,
+          file: revisionFileName,
+          fileLink: revisionFileObject ? URL.createObjectURL(revisionFileObject) : null,
         }
       });
 
@@ -1019,6 +1040,8 @@ function JobDetail() {
     setFiles([]);
     setCreateNewTransmittal(false);
   };
+
+  console.log("new-trasnsmittal", transmittals);
 
   const deleteTransmittal = (transmittalID) => {
     // Get jobs from local storage
@@ -1093,7 +1116,7 @@ function JobDetail() {
       },
       files: transmittal.files.map((file) => {
         const doc = job.incomingDocs?.find((d) => d.srNo === file.srNo);
-        console.log(doc);
+        console.log("doc:", doc);
         return {
           ...doc,
           name: file.fileName,
@@ -1102,6 +1125,7 @@ function JobDetail() {
           modified: file.lastModified,
           count: file.pageCount,
           revision: file.revision,
+          revisions: file.revisions,
           fileLink: file.fileLink,
         };
       }),
@@ -1277,61 +1301,80 @@ function JobDetail() {
               <tbody id="permissionsTableBody">
 
                 {incomingDocs?.length > 0 ? (
+                  incomingDocs.map((doc) => {
+                    console.log("line:1303", doc)
+                    let latestFileName = doc.fileName;
+                    let latestFileLink = doc.fileLink;
 
-                  incomingDocs.map((doc) => (
-                    <tr key={doc.srNo} className="text-center align-middle">
-                      <td className="align-middle">{doc.srNo}</td>
-                      <td className="align-middle">
-                        {doc.fileName}
-                      </td>
-                      <td className="align-middle">{doc.fileType}</td>
-                      <td className="align-middle">{doc.fileSize}</td>
-                      <td className="align-middle">{doc.lastModified}</td>
-                      <td className="align-middle">{doc.pageCount}</td>
-                      <td className="align-middle">
-                        <div style={{display:"flex", alignItems:"center", justifyContent:"space-evenly"}}>
+                    if (doc.revisions && doc.revisions.length > 0) {
+                      // Agar sirf ek revision hai, toh original file ka naam rahega
+                      if (doc.revisions.length === 1) {
+                        latestFileName = doc.fileName;
+                        latestFileLink = doc.fileLink;
+                      } else {
+                        // Agar multiple revisions hai, toh last revision ka naam aur link lenge
+                        const lastRevision = doc.revisions[doc.revisions.length - 1];
+                        latestFileName = lastRevision.fileName || doc.fileName;
+                        latestFileLink = lastRevision.fileLink || doc.fileLink;
+                      }
+                    }
 
-                        {doc.revision}
-                        <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
-                          <Link
-                            to="#"
-                            className="revision-link"
-                            onClick={(e) => {
-                              e.preventDefault(); // Prevent default anchor behavior
-                              handleRevisionClick(jobID, doc.srNo);
-                            }}
-                          >
-                            <i class="fa fa-plus" aria-hidden="true"></i>
+
+                    return (
+                      <tr key={doc.srNo} className="text-center align-middle">
+                        <td className="align-middle">{doc.srNo}</td>
+                        <td className="align-middle">
+                          {latestFileName}
+                        </td>
+                        <td className="align-middle">{doc.fileType}</td>
+                        <td className="align-middle">{doc.fileSize}</td>
+                        <td className="align-middle">{doc.lastModified}</td>
+                        <td className="align-middle">{doc.pageCount}</td>
+                        <td className="align-middle">
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-evenly" }}>
+
+                            {doc.revision}
+                            <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
+                            <Link
+                              to="#"
+                              className="revision-link"
+                              onClick={(e) => {
+                                e.preventDefault(); // Prevent default anchor behavior
+                                handleRevisionClick(jobID, doc.srNo);
+                              }}
+                            >
+                              <i class="fa fa-plus" aria-hidden="true"></i>
+                            </Link>
+                          </div>
+                        </td>
+                        <td className="align-middle">
+                          <Link to={latestFileLink} download={latestFileName} target="_blank" rel="noopener noreferrer" title="Download">
+                            <i className="fas fa-download"></i>
                           </Link>
-                        </div>
-                      </td>
-                      <td className="align-middle">
-                        <Link to={doc.fileLink} download={doc.fileName} target="_blank" rel="noopener noreferrer" title="Download">
-                          <i className="fas fa-download"></i>
-                        </Link>
-                        <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
-                        &nbsp;
-                        <Link to="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleFileNameClick(doc.srNo)
-                          }}
-                          title="Add Additional Fields">
-                          <i className="fas fa-eye"></i>
-                        </Link>
-                        <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
-                        &nbsp;
-                        <Link to="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleDeleteIncomingDoc(jobID, doc.srNo);
-                          }}
-                          title="Delete Revision">
-                          <i className="fas fa-times-circle text-danger"></i>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                          <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
+                          &nbsp;
+                          <Link to="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleFileNameClick(doc.srNo)
+                            }}
+                            title="Add Additional Fields">
+                            <i className="fas fa-eye"></i>
+                          </Link>
+                          <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
+                          &nbsp;
+                          <Link to="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDeleteIncomingDoc(jobID, doc.srNo);
+                            }}
+                            title="Delete Revision">
+                            <i className="fas fa-times-circle text-danger"></i>
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })
                 ) : (
                   <tr>
                     <td colSpan="8">No documents available.</td>
@@ -1662,7 +1705,7 @@ function JobDetail() {
                     <Table striped bordered hover id="transmittalFilesTable">
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'center', width: 20+ "%" }}>
+                          <th style={{ textAlign: 'center', width: 20 + "%" }}>
                             <Form.Check
                               type="checkbox"
                               checked={selectAll}
@@ -1672,7 +1715,7 @@ function JobDetail() {
                               aria-label="Checkbox for following text input"
                             />
                           </th>
-                          <th style={{ textAlign: 'center', width: 80+"%" }}>File Revision</th>
+                          <th style={{ textAlign: 'center', width: 80 + "%" }}>File Revision</th>
                           {/* <th style={{ textAlign: 'center' }}>Revision</th> */}
                         </tr>
                       </thead>
@@ -1705,9 +1748,9 @@ function JobDetail() {
                                 {selectedFileName}
                               </td> */}
 
-                              <td className="text-center align-middle" style={{ width: "20%" }}>
+                              <td className="text-center align-middle">
                                 <Form.Select
-                                  value={selectedRevisions[file.srNo] || file.revisions[0]}
+                                  value={selectedRevisions[file.srNo] !== undefined ? selectedRevisions[file.srNo] : file.revisions[file.revisions.length - 1]}
                                   onChange={(e) => {
                                     const newRevision = parseInt(e.target.value, 10);
                                     setSelectedRevisions((prev) => ({
@@ -1716,12 +1759,27 @@ function JobDetail() {
                                     }));
                                   }}
                                 >
-                                  {file.revisions.slice().reverse().map((rev, index) => (
+                                  {/* {file.revisions.slice().reverse().map((rev, index) => (
                                     <option key={rev} value={rev}>
                                       {`Rev ${rev} -   ${file.revisionFileName[index] || file.fileName}`}
                                       {/* {`Rev - ${rev}`} */}
-                                    </option>
-                                  ))}
+                                  {/* </option>
+                                  ))} */}}
+
+
+
+
+                                  {file.revisions
+                                    .map((rev, index) => ({
+                                      rev,
+                                      fileName: file.revisionFileName[index] || file.fileName,
+                                    }))
+                                    .reverse()
+                                    .map(({ rev, fileName }) => (
+                                      <option key={rev} value={rev}>
+                                        {`Rev ${rev} - ${fileName}`}
+                                      </option>
+                                    ))}
                                 </Form.Select>
                               </td>
                             </tr>
@@ -1834,26 +1892,29 @@ function JobDetail() {
                           </tr>
                         </thead>
                         <tbody>
-                          {transmittalDetails.files.map((file, index) => (
-                            <tr key={index} className="text-center align-middle">
-                              <td>{file.revisions?.[file.revision]?.fileName || file.fileName}</td>
-                              <td>{file.fileType?.toUpperCase()}</td>
-                              <td>{file.fileSize}</td>
-                              <td>{file.lastModified}</td>
-                              <td>{file.pageCount}</td>
-                              <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
-                              <td>
-                                <Link
-                                  to={file.revisions?.[file.revision]?.fileLink || "#"}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title="Download"
-                                >
-                                  View
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
+                          {transmittalDetails.files.map((file, index) => {
+                            console.log("FILE:", file);
+                            return (
+                              <tr key={index} className="text-center align-middle">
+                                <td>{file.revisions?.[file.revision]?.fileName || file.fileName}</td>
+                                <td>{file.fileType?.toUpperCase()}</td>
+                                <td>{file.fileSize}</td>
+                                <td>{file.lastModified}</td>
+                                <td>{file.pageCount}</td>
+                                <td>{file.revision ? `Rev ${file.revision}` : "N/A"}</td>
+                                <td>
+                                  <Link
+                                    to={file.revisions?.[file.revision]?.fileLink || "#"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Download"
+                                  >
+                                    View
+                                  </Link>
+                                </td>
+                              </tr>
+                            )
+                          })}
                         </tbody>
                       </Table>
                     </div>

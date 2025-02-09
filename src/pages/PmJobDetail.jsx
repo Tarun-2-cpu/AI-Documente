@@ -36,7 +36,7 @@ function PmJobDetail() {
   const [additionalComment, setAdditionalComment] = useState('');
   const [modalData, setModalData] = useState('');
   const [detailModal, setDetailModal] = useState(false);
-  const[responded,setResponded] = useState(false);
+  const [responded, setResponded] = useState(false);
 
   const [departments, setDepartments] = useState({
     ENG: [],
@@ -941,61 +941,72 @@ function PmJobDetail() {
                   <th style={{ width: '14%', textAlign: "center" }}>Description</th>
                   <th style={{ width: '12%', textAlign: "center" }}>Current Revision</th>
                   <th style={{ width: '15%', textAlign: "center" }}>Last Updated</th>
-                  <th style={{ width: '10%', textAlign: "center" }}>Status</th>
+                  {/* <th style={{ width: '10%', textAlign: "center" }}>Status</th> */}
                   <th style={{ width: '14%', textAlign: "center" }}>Action</th>
                 </tr>
               </thead>
               <tbody id="fileMasterListBody">
 
-                {masterListRows.length > 0 ? (
+                {/* {masterListRows.length > 0 ? (
                   masterListRows.map((row, index) => {
                     const incomingFeedback = row.incomingRevisions;
                     let lastFeedback = { commentCode: "" };
-                
+
                     if (incomingFeedback) {
                       lastFeedback = incomingFeedback[incomingFeedback.length - 1][0];
-                    }
-                
-                    const commentCode = lastFeedback.commentCode;
-                    let bgColor;
+                    } */}
 
-                    // if(responded){
-                    //   bgColor="white"
-                    // }else{
-                    //   bgColor="green"
-                    // }
+                {masterListRows.length > 0 ? (
+                  [...masterListRows]
+                    .sort((a, b) => a.serialNo - b.serialNo)
+                    .map((row, index) => {
+                      const incomingFeedback = row.incomingRevisions;
+                      let lastFeedback = { commentCode: "" };
 
-                    return (
+                      if (incomingFeedback && incomingFeedback.length > 0) {
+                        lastFeedback = incomingFeedback[incomingFeedback.length - 1][0] || {};
+                      }
 
-                      <tr key={index} className={getStatusClass(row.status)}>
-                        <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{row.serialNo}</td>
-                        <td className="text-center align-middle"  style={{ backgroundColor: bgColor }}>{row.department}</td>
-                        <td className="text-center align-middle"  style={{ backgroundColor: bgColor }}>{row.fileDescription}</td>
-                        <td className="text-center align-middle"  style={{ backgroundColor: bgColor }}>{row.revision}</td>
-                        <td className="text-center align-middle"  style={{ backgroundColor: bgColor }}>{row.lastUpdated}</td>
-                        <td className="text-center align-middle" style={{ backgroundColor: bgColor }} >{row.status}</td>
-                        <td className="text-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
-                          <Button
-                            className="action-btn"
-                            variant="outline-secondary"
-                            style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                            onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            className="action-btn px-2"
-                            variant="outline-secondary"
-                            onClick={() => openIncomingModal(row.department, row.fileDescription, row)}
-                            style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
-                          >
-                            Respond
-                          </Button>
-                        </td>
+                      const commentCode = lastFeedback.commentCode;
+                      let bgColor;
 
-                      </tr>
-                    )
-                  })
+                      // if(responded){
+                      //   bgColor="white"
+                      // }else{
+                      //   bgColor="green"
+                      // }
+
+                      return (
+
+                        <tr key={index} className={getStatusClass(row.status)}>
+                          <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{row.serialNo}</td>
+                          <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{row.department}</td>
+                          <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{row.fileDescription}</td>
+                          <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{row.revision}</td>
+                          <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{row.lastUpdated}</td>
+                          {/* <td className="text-center align-middle" style={{ backgroundColor: bgColor }} >{row.status}</td> */}
+                          <td className="text-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '0.25rem' }}>
+                            <Button
+                              className="action-btn"
+                              variant="outline-secondary"
+                              style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                              onClick={() => openFileDetailsModal(row.department, row.fileDescription, row.revision)}
+                            >
+                              View
+                            </Button>
+                            <Button
+                              className="action-btn px-2"
+                              variant="outline-secondary"
+                              onClick={() => openIncomingModal(row.department, row.fileDescription, row)}
+                              style={{ flex: '1 1 auto', width: '80%', maxWidth: '120px' }}
+                            >
+                              Respond
+                            </Button>
+                          </td>
+
+                        </tr>
+                      )
+                    })
                 ) : (
                   <tr>
                     <td colSpan="7" className="text-center">
@@ -1471,7 +1482,11 @@ function PmJobDetail() {
                           </thead>
                           <tbody>
                             {outgoingTransmittal.files.map((file) => {
-                              const lastRevision = file.revisions?.[file.revisions.length - 1];
+                              // const lastRevision = file.revisions?.[file.revisions.length - 1];
+                              const lastRevision =
+                                file.revisions && file.revisions.length > 0
+                                  ? file.revisions[file.revisions.length - 1]
+                                  : null;
                               return (
                                 <tr>
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.fileDescription || "-"}</td>
@@ -1480,18 +1495,20 @@ function PmJobDetail() {
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.clientCode || "-"}</td>
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.clientDocumentNo || "-"}</td>
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.zsDocumentNo || ""}</td>
-                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.revisions.length || ""}</td>
+                                  <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.revisions ? file.revisions.length : "N/A"}</td>
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.plannedDate || ""}</td>
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>{file.ownerEmail || ""}</td>
                                   <td class="text-center align-middle table-cell" style={{ width: "10%" }}>
-                                    <Link
-                                      to={lastRevision?.fileLink || "#"}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      title="Download"
-                                    >
-                                      View
-                                    </Link>
+                                    {lastRevision && lastRevision.fileLink ? (
+                                      <Link
+                                        to={lastRevision.fileLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Download"
+                                      >
+                                        View
+                                      </Link>
+                                    ) : ("-")}
                                   </td>
                                 </tr>
                               );
