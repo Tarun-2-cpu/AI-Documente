@@ -1324,20 +1324,17 @@ function PmJobDetail() {
                     Total Selected Files:{" "}
                     {Object.values(selectedFiles[dept] || {}).filter(Boolean).length}
                   </p>
-                  <Table bordered>
+                  <Table striped bordered hover>
                     <thead>
                       <tr>
-                        <th className="text-center align-middle" style={{ padding: 0 + "px" }}>
-                          <div className="" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <input
-                              type="checkbox"
-                              className="form-check-input text-center align-middle"
-                              id="selectAllFiles"
-                              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-                              checked={selectAll}
-                              onChange={toggleSelectAllFiles}
-                            />
-                          </div>
+                        <th style={{ textAlign: 'center', width: 20 + "%" }}>
+                          <Form.Check
+                            type="checkbox"
+                            className="d-flex align-items-center justify-content-center"
+                            checked={selectAll}
+                            onChange={toggleSelectAllFiles}
+                            aria-label="Checkbox for following text input"
+                          />
                         </th>
                         <th className="text-center">File Description</th>
                         <th className="text-center">Revision</th>
@@ -1346,14 +1343,17 @@ function PmJobDetail() {
                     </thead>
                     <tbody>
                       {files.map((file, index) => (
-                        <tr key={index}>
-                          <td className="d-flex align-items-center justify-content-center text-center align-self-center align-middle" style={{ marginX: "auto", marginY: "auto" }}>
-                            <input
-                              type="checkbox"
-                              className="form-check-input"
-                              checked={selectedFiles[dept]?.[index] || false}
-                              onChange={() => handleFileSelection(dept, index)}
-                            />
+                        <tr key={index} className="text-center align-middle">
+                          <td style={{ textAlign: 'center', width: "20%" }} className="text-center align-middle">
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+                              <Form.Check
+                                type="checkbox"
+                                checked={selectedFiles[dept]?.[index] || false}
+                                onChange={() => handleFileSelection(dept, index)}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              />
+                            </div>
                           </td>
                           <td className="text-center">{file.fileDescription}</td>
                           <td className="text-center">{file.revisions?.length || 0}</td>
