@@ -90,7 +90,7 @@ const SignInLayer = () => {
                     <div>
                         <h4 className="mb-12">Sign In to your Account</h4>
                         <p className="mb-32 text-secondary-light text-lg">
-                            Welcome back! please enter your detail
+                            Welcome! please enter your detail
                         </p>
                     </div>
                     <form action="#">

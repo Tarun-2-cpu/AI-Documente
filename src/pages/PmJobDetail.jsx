@@ -153,9 +153,9 @@ function PmJobDetail() {
               lastIncoming[lastIncoming.length - 1]?.commentCode;
 
             // Set status based on the comment code
-            if (["F", "I", "R"].includes(commentCode)) {
+            if (["B", "C", "F"].includes(commentCode)) {
               status = "Approved";
-            } else if (["A", "B", "C", "V"].includes(commentCode)) {
+            } else if (["R", "AB", "I", "V"].includes(commentCode)) {
               status = "Returned";
             }
           }
@@ -321,7 +321,6 @@ function PmJobDetail() {
       });
     }
   }
-
 
   function submitIncomingFile() {
     if (!file) {
@@ -960,21 +959,24 @@ function PmJobDetail() {
                   [...masterListRows]
                     .sort((a, b) => a.serialNo - b.serialNo)
                     .map((row, index) => {
-                      const incomingFeedback = row.incomingRevisions;
-                      let lastFeedback = { commentCode: "" };
+                      const incomingFeedback = row.incomingRevisions || [];
+                      let lastFeedback = null;
 
                       if (incomingFeedback && incomingFeedback.length > 0) {
-                        lastFeedback = incomingFeedback[incomingFeedback.length - 1][0] || {};
+                        const lastRevision = incomingFeedback[incomingFeedback.length - 1]; 
+                        // lastFeedback = incomingFeedback[incomingFeedback.length - 1][0] || {};
+
+                        if (Array.isArray(lastRevision) && lastRevision.length > 0) {
+                          lastFeedback = lastRevision[0]; 
+                        } else {
+                          lastFeedback = lastRevision; 
+                        }
+
                       }
 
-                      const commentCode = lastFeedback.commentCode;
-                      let bgColor;
+                      const bgColor = lastFeedback?.commentCode ? "white" : "white";
+                      // const bgColor = lastFeedback?.commentCode ? "white" : "lightgreen";
 
-                      // if(responded){
-                      //   bgColor="white"
-                      // }else{
-                      //   bgColor="green"
-                      // }
 
                       return (
 
@@ -1073,45 +1075,52 @@ function PmJobDetail() {
                       </thead>
                       <tbody id="">{/* kkkk */}
                         {modalData.revisions.map((revision, index) => {
-                          const incomingFeedback = modalData.incomingRevisions[index];
-                          const lastFeedback = incomingFeedback?.[incomingFeedback.length - 1] || {};
-                          const commentCode = lastFeedback.commentCode;
-                          const status = ["F", "I", "R"].includes(lastFeedback.commentCode)
-                            ? "Approved"
-                            : ["A", "B", "C", "V"].includes(lastFeedback.commentCode)
-                              ? "Returned"
-                              : "New";
+                          const incomingFeedback = modalData.incomingRevisions[index] || [];
+                          const lastFeedback = incomingFeedback.length > 0 ? incomingFeedback[incomingFeedback.length - 1] : {};
+                          const commentCode = lastFeedback.commentCode|| "N/A";
+                          
 
                           let bgColor;
 
                           switch (commentCode) {
-                            case 'F-Reviewed without Comments':
-                            case 'I-For Information':
-                            case 'R-Reviewed as built':
-                              bgColor = "#ccffcc";
+                            case 'F-Final':
+                              bgColor = "#006400"; // dark green
                               break;
-                            case 'A':
-                            case 'B-Comment as Noted':
-                            case 'C-Reviewed as Comments':
                             case 'V-Void':
-                              bgColor = "#ffcccc";
+                              bgColor = "#808080"; // gray
+                              break;
+                            case 'B-Comment as Noted (work may proceed)':
+                              bgColor = "#90EE90"; // light green
+                              break;
+                            case 'C-Reviewed with Comments (Resubmit)':
+                              bgColor = "#FFFF00"; // yellow
+                              break;
+                            case 'I-For Information':
+                              bgColor = "#0000FF"; // blue
+                              break;
+                            case 'AB-Reviewed as built':
+                              bgColor = "#008000"; // dark green (different shade)
+                              break;
+                            case 'R-Rejected':
+                              bgColor = "#FF0000"; // red
                               break;
                             default:
-                              bgColor = "#ffffcc";
+                              bgColor = "#ffffcc"; // default color
                           }
+
 
                           return (
                             <tr key={index}>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>Rev {index}</td>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>
+                              <td className="text-center align-middle" >Rev {index}</td>
+                              <td className="text-center align-middle" >
                                 <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                   {revision.name}
                                 </Link>
                               </td>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{revision.date}</td>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{lastFeedback.commentCode || "N/A"}</td>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{lastFeedback.additionalComment || "N/A"}</td>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>
+                              <td className="text-center align-middle" >{revision.date}</td>
+                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{commentCode}</td>
+                              <td className="text-center align-middle" >{lastFeedback.additionalComment || "N/A"}</td>
+                              <td className="text-center align-middle">
                                 {lastFeedback.hash ? (
                                   <Link to={lastFeedback.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                     {lastFeedback.name}
@@ -1120,7 +1129,7 @@ function PmJobDetail() {
                                   "N/A"
                                 )}
                               </td>
-                              <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{lastFeedback.date || "N/A"}</td>
+                              <td className="text-center align-middle">{lastFeedback.date || "N/A"}</td>
                             </tr>
                           );
                         })}
@@ -1180,12 +1189,12 @@ function PmJobDetail() {
                   value={commentCode}
                   onChange={(e) => setCommentCode(e.target.value)}
                 >
-                  <option>A-Rejected</option>
-                  <option>B-Comment as Noted</option>
-                  <option>C-Reviewed as Comments</option>
-                  <option>F-Reviewed without Comments</option>
+                  <option>R-Rejected</option>
+                  <option>B-Comment as Noted (work may proceed)</option>
+                  <option>C-Reviewed with Comments (Resubmit)</option>
+                  <option>F-Final</option>
                   <option>I-For Information</option>
-                  <option>R-Reviewed as built</option>
+                  <option>AB-Reviewed as built</option>
                   <option>V-Void</option>
                 </select>
               </div>
@@ -1209,7 +1218,7 @@ function PmJobDetail() {
                   id="description"
                   value={additionalComment}
                   onChange={(e) => setAdditionalComment(e.target.value)}
-                  aria-label="With textarea" placeholder="Job Description"></textarea>
+                  aria-label="With textarea" placeholder="Add Comment"></textarea>
               </div>
 
               <div className="mb-3">
@@ -1356,7 +1365,7 @@ function PmJobDetail() {
                             </div>
                           </td>
                           <td className="text-center">{file.fileDescription}</td>
-                          <td className="text-center">{file.revisions?.length || 0}</td>
+                          <td className="text-center">{file.revisions?.length || "N/A"}</td>
                           <td className="text-center">{file.zsDocumentNo || "N/A"}</td>
                         </tr>
                       ))}

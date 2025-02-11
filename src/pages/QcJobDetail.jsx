@@ -1197,7 +1197,7 @@ function QcJobDetail() {
 
       <div className="card h-100 p-0 radius-12 mt-24">
         <div className="card-header border-bottom bg-base py-16 px-24">
-          <h6 className="text-lg fw-semibold mb-0">Master List of Files from Departments</h6>
+          <h6 className="text-lg fw-semibold mb-0">Files from Departments</h6>
         </div>
         <div className="card-body p-24">
           <div className="row row-cols-1 gy-4">
@@ -1312,43 +1312,49 @@ function QcJobDetail() {
                             </thead>
                             <tbody id="">
                               {modalData.revisions.map((revision, index) => {
-                                const incomingFeedback = modalData.incomingRevisions[index];
-                                const lastFeedback = incomingFeedback?.[incomingFeedback.length - 1] || {};
-                                const commentCode = lastFeedback.commentCode;
-                                const status = ["F", "I", "R"].includes(lastFeedback.commentCode)
-                                  ? "Approved"
-                                  : ["A", "B", "C", "V"].includes(lastFeedback.commentCode)
-                                    ? "Returned"
-                                    : "New";
+                                const incomingFeedback = modalData.incomingRevisions[index] || [];
+                                const lastFeedback = incomingFeedback.length > 0 ? incomingFeedback[incomingFeedback.length - 1] : {};
+                                const commentCode = lastFeedback.commentCode|| "N/A";
+                                
 
                                     let bgColor;
 
-                                    switch(commentCode) {
-                                      case 'F-Reviewed without Comments':
-                                      case 'I-For Information':
-                                      case 'R-Reviewed as built':
-                                        bgColor = "#ccffcc";
-                                        break;
-                                      case 'A':
-                                      case 'B-Comment as Noted':
-                                      case 'C-Reviewed as Comments':
-                                      case 'V-Void':
-                                        bgColor = "#ffcccc";
-                                        break;
-                                      default:
-                                        bgColor = "#ffffcc";
-                                    }
+                          switch (commentCode) {
+                            case 'F-Final':
+                              bgColor = "#006400"; // dark green
+                              break;
+                            case 'V-Void':
+                              bgColor = "#808080"; // gray
+                              break;
+                            case 'B-Comment as Noted (work may proceed)':
+                              bgColor = "#90EE90"; // light green
+                              break;
+                            case 'C-Reviewed with Comments (Resubmit)':
+                              bgColor = "#FFFF00"; // yellow
+                              break;
+                            case 'I-For Information':
+                              bgColor = "#0000FF"; // blue
+                              break;
+                            case 'AB-Reviewed as built':
+                              bgColor = "#008000"; // dark green (different shade)
+                              break;
+                            case 'R-Rejected':
+                              bgColor = "#FF0000"; // red
+                              break;
+                            default:
+                              bgColor = "#ffffcc"; // default color
+                          }
 
                                 return (
-                                  <tr key={index} className="text-center">
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}> Rev {index}</td>
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}>
+                                  <tr key={index} className="text-center align-middle">
+                                    <td className="text-center align-middle" > Rev {index}</td>
+                                    <td className="text-center align-middle" >
                                       <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                         {revision.hash}
                                       </Link>
                                     </td>
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{revision.date}</td>
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}>
+                                    <td className="text-center align-middle" >{revision.date}</td>
+                                    <td className="text-center align-middle" >
                                       {lastFeedback.hash ? (
                                         <Link to={lastFeedback.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                           {lastFeedback.name}
@@ -1357,9 +1363,9 @@ function QcJobDetail() {
                                         "N/A"
                                       )}
                                     </td>
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{lastFeedback.commentCode || "N/A"}</td>
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{lastFeedback.additionalComment || "N/A"}</td>
-                                    <td className="text-center" style={{ backgroundColor: bgColor }}>{lastFeedback.date || "N/A"}</td>
+                                    <td className="text-center align-middle" style={{ backgroundColor: bgColor }}>{commentCode}</td>
+                                    <td className="text-center align-middle" >{lastFeedback.additionalComment || "N/A"}</td>
+                                    <td className="text-center align-middle">{lastFeedback.date || "N/A"}</td>
                                   </tr>
                                 );
                               })}

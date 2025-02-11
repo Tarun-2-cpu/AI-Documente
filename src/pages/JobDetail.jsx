@@ -498,7 +498,7 @@ function JobDetail() {
   // };
 
 
-  const openRevisionHistoryModal = (jobId, srNo) => {
+  const openRevisionHistoryModal = (jobId, srNo, doc ) => {
     console.log("openRevisionHistoryModal triggered with srNo:", srNo);
 
     const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
@@ -520,6 +520,13 @@ function JobDetail() {
       return;
     }
 
+    setModalData({
+      fileName: file.fileName,
+      fileLink: file.fileLink,
+      revisions: file.revisions,
+    });
+    
+
     // 🔹 Get last revision details
     const lastRevision = file.revisions[file.revisions.length - 1];
 
@@ -527,11 +534,6 @@ function JobDetail() {
     file.fileName = lastRevision.fileName || file.fileName;
     file.fileLink = lastRevision.fileLink || file.fileLink;
 
-    setModalData({
-      fileName: file.fileName,
-      fileLink: file.fileLink,
-      revisions: file.revisions,
-    });
 
     console.log("Modal data prepared:", {
       fileName: file.fileName,
@@ -553,9 +555,9 @@ function JobDetail() {
     console.log("Revision modal visibility set to true");
   };
 
-  const handleRevisionClick = (jobId, srNo) => {
-    openRevisionHistoryModal(jobId, srNo)
-    openRevisionModal(jobId, srNo)
+  const handleRevisionClick = (jobId, srNo, doc) => {
+    openRevisionHistoryModal(jobId, srNo, doc)
+    openRevisionModal(jobId, srNo, doc)
   };
 
   // const renderFilePreview = (fileType, fileLink) => {
@@ -679,66 +681,66 @@ function JobDetail() {
 
 
 
-  const handleDeleteRevision = (jobId, srNo, revisionIndex) => {
-    console.log("handleDeleteRevision triggered with jobId:", jobId, "srNo:", srNo, "revisionIndex:", revisionIndex);
+  // const handleDeleteRevision = (jobId, srNo, revisionIndex) => {
+  //   console.log("handleDeleteRevision triggered with jobId:", jobId, "srNo:", srNo, "revisionIndex:", revisionIndex);
 
-    // Retrieve jobs from localStorage
-    let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   // Retrieve jobs from localStorage
+  //   let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
 
-    // Find the job
-    let job = jobs.find((j) => j.jobId === jobId);
-    if (!job) {
-      Swal.fire("Error", "Job not found!", "error");
-      return;
-    }
+  //   // Find the job
+  //   let job = jobs.find((j) => j.jobId === jobId);
+  //   if (!job) {
+  //     Swal.fire("Error", "Job not found!", "error");
+  //     return;
+  //   }
 
-    // Find the document
-    let doc = job.incomingDocs.find((d) => d.srNo === srNo);
-    if (!doc || !doc.revisions) {
-      Swal.fire("Error", "Document or revisions not found!", "error");
-      return;
-    }
+  //   // Find the document
+  //   let doc = job.incomingDocs.find((d) => d.srNo === srNo);
+  //   if (!doc || !doc.revisions) {
+  //     Swal.fire("Error", "Document or revisions not found!", "error");
+  //     return;
+  //   }
 
-    // Ensure revision exists before deleting
-    if (revisionIndex < 0 || revisionIndex >= doc.revisions.length) {
-      Swal.fire("Error", "Invalid revision index!", "error");
-      return;
-    }
+  //   // Ensure revision exists before deleting
+  //   if (revisionIndex < 0 || revisionIndex >= doc.revisions.length) {
+  //     Swal.fire("Error", "Invalid revision index!", "error");
+  //     return;
+  //   }
 
-    // Remove the specified revision
-    doc.revisions.splice(revisionIndex, 1);
+  //   // Remove the specified revision
+  //   doc.revisions.splice(revisionIndex, 1);
 
-    // Update the revision count
-    doc.revision = doc.revisions.length > 0 ? doc.revisions.length - 1 : 0;
+  //   // Update the revision count
+  //   doc.revision = doc.revisions.length > 0 ? doc.revisions.length - 1 : 0;
 
-    // Save updated jobs to localStorage
-    localStorage.setItem('jobs', JSON.stringify(jobs));
+  //   // Save updated jobs to localStorage
+  //   localStorage.setItem('jobs', JSON.stringify(jobs));
 
-    // Fetch updated data to ensure UI sync
-    const updatedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
-    const updatedJob = updatedJobs.find((j) => j.jobId === jobId);
-    const updatedDoc = updatedJob?.incomingDocs.find((d) => d.srNo === srNo);
+  //   // Fetch updated data to ensure UI sync
+  //   const updatedJobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  //   const updatedJob = updatedJobs.find((j) => j.jobId === jobId);
+  //   const updatedDoc = updatedJob?.incomingDocs.find((d) => d.srNo === srNo);
 
-    // Update modal data
-    setModalData((prevData) => ({
-      ...prevData,
-      revisions: updatedDoc?.revisions || [],
-    }));
+  //   // Update modal data
+  //   setModalData((prevData) => ({
+  //     ...prevData,
+  //     revisions: updatedDoc?.revisions || [],
+  //   }));
 
-    // Update incomingDocs state to reflect changes in the main table
-    setIncomingDocs((prevDocs) =>
-      prevDocs.map((d) =>
-        d.srNo === srNo ? { ...d, revisions: updatedDoc?.revisions || [], revision: updatedDoc?.revision || 0 } : d
-      )
-    );
+  //   // Update incomingDocs state to reflect changes in the main table
+  //   setIncomingDocs((prevDocs) =>
+  //     prevDocs.map((d) =>
+  //       d.srNo === srNo ? { ...d, revisions: updatedDoc?.revisions || [], revision: updatedDoc?.revision || 0 } : d
+  //     )
+  //   );
 
-    console.log("Updated modalData:", {
-      fileName: updatedDoc?.fileName || "",
-      revisions: updatedDoc?.revisions || [],
-    });
+  //   console.log("Updated modalData:", {
+  //     fileName: updatedDoc?.fileName || "",
+  //     revisions: updatedDoc?.revisions || [],
+  //   });
 
-    Swal.fire('Success', 'Revision deleted successfully!', 'success');
-  };
+  //   Swal.fire('Success', 'Revision deleted successfully!', 'success');
+  // };
 
 
   const renderFilePreview = (fileType, fileLink, fileName) => {
@@ -1339,7 +1341,7 @@ function JobDetail() {
                               className="revision-link"
                               onClick={(e) => {
                                 e.preventDefault(); // Prevent default anchor behavior
-                                handleRevisionClick(jobID, doc.srNo);
+                                handleRevisionClick(jobID, doc.srNo,doc);
                               }}
                             >
                               <i class="fa fa-plus" aria-hidden="true"></i>
@@ -1436,7 +1438,8 @@ function JobDetail() {
                     <tr key={index}>
                       <td className="text-center align-middle">{revision.revision}</td> {/* Display revision count from the object */}
                       <td className="text-center align-middle">
-                        {index === 0 ? modalData.fileName : revision.fileName ? revision.fileName : "N/A"}
+                        {/* {index === 0 ? modalData.fileName : revision.fileName ? revision.fileName : "N/A"} */}
+                        { index === 0 ? modalData.fileName : revision.fileName }
                       </td>
                       <td className="text-center align-middle">
                         {index === 0 ? revision.uploadDate : revision.uploadDate}
