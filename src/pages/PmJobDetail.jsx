@@ -1064,13 +1064,15 @@ function PmJobDetail() {
                     <Table bordered id="revision-history-table">
                       <thead>
                         <tr>
-                          <th className="text-center" style={{ width: "10.5%" }}>Rev No</th>
-                          <th className="text-center" style={{ width: "12.5%" }}>Recieved File</th>
-                          <th className="text-center" style={{ width: "12.5%" }}>Recieved Date</th>
-                          <th className="text-center" style={{ width: "14.5%" }}>Added Comment Code</th>
-                          <th className="text-center" style={{ width: "12.5%" }}>Added Comment</th>
-                          <th className="text-center" style={{ width: "12.5%" }}>Return File</th>
-                          <th className="text-center" style={{ width: "12.5%" }}>Return Date</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Rev No</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Recieved File</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Recieved Date</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Comment Code</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Added Comment</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Return File</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Recieved Comment</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Issue Purpose</th>
+                          <th className="text-center" style={{ width: "11.1%" }}>Return Date</th>
                         </tr>
                       </thead>
                       <tbody id="">{/* kkkk */}
@@ -1079,7 +1081,6 @@ function PmJobDetail() {
                           const lastFeedback = incomingFeedback.length > 0 ? incomingFeedback[incomingFeedback.length - 1] : {};
                           const commentCode = lastFeedback.commentCode|| "N/A";
                           
-
                           let bgColor;
 
                           switch (commentCode) {
@@ -1108,7 +1109,6 @@ function PmJobDetail() {
                               bgColor = "#ffffcc"; // default color
                           }
 
-
                           return (
                             <tr key={index}>
                               <td className="text-center align-middle" >Rev {index}</td>
@@ -1129,6 +1129,8 @@ function PmJobDetail() {
                                   "N/A"
                                 )}
                               </td>
+                              <td className="text-center align-middle">{revision.comment || "N/A"}</td>
+                              <td className="text-center align-middle">{revision.issuePurpose || "N/A"}</td>
                               <td className="text-center align-middle">{lastFeedback.date || "N/A"}</td>
                             </tr>
                           );

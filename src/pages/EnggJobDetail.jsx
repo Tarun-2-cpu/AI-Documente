@@ -11,7 +11,7 @@ import * as pdfjsLib from "pdfjs-dist/webpack";
 import { FaTimes } from "react-icons/fa";
 import "./Modal.css";
 import Swal from 'sweetalert2';
-
+import Form from 'react-bootstrap/Form';
 
 const defaultRow = {
   fileDescription: "Default Description",
@@ -84,9 +84,12 @@ function EnggJobDetail() {
 
   const [notifyModal, setNotifyModal] = useState(false)
   const [jobID, setJobID] = useState('');
-  const [summary, setSummary] = useState('');
+  const [comment, setComment] = useState('');
+  const [additionalDetailModal, setAdditionalDetailModal] = useState(false);
   const [jobs, setJobs] = useState(JSON.parse(localStorage.getItem('jobs')) || []);
   const [createNewTransmittal, setCreateNewTransmittal] = useState(false);
+  const [selectedRevisionId, setSelectedRevisionId] = useState(null);
+  const [issuePurpose, setIssuePurpose] = useState("");
 
 
 
@@ -203,34 +206,10 @@ function EnggJobDetail() {
     setEngMasterlistModal(true);
   };
 
-  // const addRow = () => {
-  //   setRows([
-  //     ...rows,
-  //     {
-  //       fileDescription: "",
-  //       equipmentTag: "",
-  //       nmrCode: "",
-  //       clientCode: "",
-  //       clientDocumentNo: "",
-  //       zsDocumentNo: "",
-  //       plannedDate: "",
-  //       ownerEmail: "",
-  //     },
-  //   ]);
-  // };
 
 
   const addRow = () => {
-    // const newRow = {
-    //   fileDescription: "",
-    //   equipmentTag: "",
-    //   nmrCode: "",
-    //   clientCode: "",
-    //   clientDocumentNo: "",
-    //   zsDocumentNo: "",
-    //   plannedDate: "",
-    //   ownerEmail: "",
-    // };
+
 
     const updatedRows = [...rows, { ...defaultRow }];
     setRows(updatedRows);
@@ -252,9 +231,6 @@ function EnggJobDetail() {
   };
 
 
-
-
-
   const updateRow = (index, field, value) => {
     const updatedRows = rows.map((row, i) =>
       i === index ? { ...row, [field]: value } : row
@@ -266,25 +242,6 @@ function EnggJobDetail() {
     setRows(rows.filter((_, i) => i !== index));
   };
 
-  // const deleteRow = (index) => {
-  //   const updatedRows = rows.filter((_, i) => i !== index);
-  //   setRows(updatedRows);
-
-  //   // Update the masterlist in localStorage
-  //   const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-  //   const jobId = localStorage.getItem("currentJobId");
-  //   const jobIndex = jobs.findIndex((j) => j.jobId === jobId);
-
-  //   if (jobIndex !== -1) {
-  //     const currentJob = jobs[jobIndex];
-  //     currentJob.masterlist = currentJob.masterlist || {};
-  //     currentJob.masterlist.ENG = updatedRows; // Update the ENG masterlist
-  //     jobs[jobIndex] = currentJob;
-
-  //     // Save back to localStorage
-  //     localStorage.setItem("jobs", JSON.stringify(jobs));
-  //   }
-  // };
 
 
   const handleSave = () => {
@@ -312,47 +269,6 @@ function EnggJobDetail() {
   };
 
 
-  // const handleSave = () => {
-
-  //   const masterlistData = {
-  //     fileDescription: fileDesc,
-  //     equipmentTag: equipTag,
-  //     nmrCode: nmr,
-  //     clientCode: clientCode,
-  //     clientDocumentNo: clientDocNo,
-  //     zsDocumentNo: zsDocNo,
-  //     plannedDate: pDate,
-  //     ownerEmail: owner,
-  //   }
-
-  //   // Retrieve the existing job data
-  //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-  //   const jobId = localStorage.getItem('currentJobId');
-  //   const jobIndex = jobs.findIndex(j => j.jobId === jobId);
-
-  //   if (jobIndex === -1) {
-  //     alert("Job not found!");
-  //     return;
-  //   }
-
-  //   // Add or update the masterlist for the Engineering department
-  //   const currentJob = jobs[jobIndex];
-  //   currentJob.masterlist = currentJob.masterlist || {};
-  //   currentJob.masterlist.ENG = Array.isArray(currentJob.masterlist.ENG) ? currentJob.masterlist.ENG : [];
-
-  //   // Append the new entry to the masterlist array
-  //   currentJob.masterlist.ENG.push(masterlistData);
-
-  //   // Update the localStorage
-  //   jobs[jobIndex] = currentJob;
-  //   localStorage.setItem('jobs', JSON.stringify(jobs));
-
-  //   // Close the modal
-  //   closeMasterlistModal();
-  //   setEngMasterlistModal(false);
-  // };
-
-  //   // Function to close the modal
   function closeMasterlistModal() {
     setEngMasterlistModal(false);
   }
@@ -367,35 +283,6 @@ function EnggJobDetail() {
     setRevisionModalShow(true);
     setCurrentFileIndex(index);
   }
-
-  // const handleFileUpload = (event) => {
-  //   const file = event.target.files[0];
-  //   if (!file) return;
-
-  //   const newRevision = {
-  //     hash: `hash_${file.name}_${Date.now()}`, // Placeholder for hash generation
-  //     date: new Date().toLocaleDateString(),
-  //     pageCount: estimatePageCount(file), // Replace with your logic
-  //     size: `${(file.size / 1024).toFixed(2)} KB`,
-  //   };
-
-  //   const updatedRevisions = [...revisions, newRevision];
-  //   setRevisions(updatedRevisions);
-
-  //   const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-  //   const jobIndex = jobs.findIndex((job) => job.jobId === currentJob.jobId);
-
-
-  //   if (jobIndex !== -1) {
-  //     const updatedJobs = [...jobs];
-  //     updatedJobs[jobIndex].masterlist.ENG[currentFileIndex].revisions = updatedRevisions;
-
-  //     // Save the updated jobs array back to localStorage
-  //     localStorage.setItem('jobs', JSON.stringify(updatedJobs));
-  //   } else {
-  //     console.error('Job not found in local storage');
-  //   }
-  // };
 
 
   const handleFileUpload = (event) => {
@@ -412,6 +299,8 @@ function EnggJobDetail() {
         date: new Date().toLocaleDateString(),
         pageCount: pageCount,
         size: `${(file.size / 1024).toFixed(2)} KB`,
+        issuePurpose: "",
+        comment: ""
       };
 
       setRevisions((prevRevisions) => {
@@ -654,102 +543,11 @@ function EnggJobDetail() {
   }, []);
 
 
-
-  // here
-
-  //handle create transmittal
-  const createTransmittal = () => {
-    if (!files.some((file) => file.selected)) {
-      alert('Please select at least one file.');
-      return;
-    }
-
-    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-    const job = jobs.find((j) => j.jobId === jobID);
-
-    if (!job) {
-      alert('Job not found.');
-      return;
-    }
-
-    const transmittalID = createUniqueTransmittalID(jobID);
-
-    const selectedFiles = files
-      .filter((file) => file.selected)
-      .map((file) => ({
-        srNo: file.srNo,
-        revision: file.revision,
-      }));
-
-    const newTransmittal = {
-      id: transmittalID,
-      date: new Date().toLocaleString(),
-      summary,
-      status: 'Pending',
-      files: selectedFiles,
-      notifiedDepartments: [],
-    };
-
-    const updatedIncomingDocs = [...(job.incomingDocs || [])];
-    selectedFiles.forEach((selected) => {
-      const doc = updatedIncomingDocs.find((d) => d.srNo === selected.srNo);
-      const revision = doc?.revisions.find((rev) => rev.revision === selected.revision);
-      if (revision) {
-        revision.transmittalID = transmittalID;
-      }
-    });
-
-    const updatedJobs = jobs.map((j) =>
-      j.jobId === jobID
-        ? { ...j, transmittals: [...(j.transmittals || []), newTransmittal], incomingDocs: updatedIncomingDocs }
-        : j
-    );
-
-    localStorage.setItem("jobs", JSON.stringify(updatedJobs));
-    console.log("804 Jobs Size:", JSON.stringify(updatedJobs).length);
-    setJobs(updatedJobs);
-    setTransmittals([...job.transmittals, newTransmittal]);
-
-    setSummary("");
-    setFiles([]);
-    setCreateNewTransmittal(false);
-  };
-
-  function createUniqueTransmittalID(jobId) {
-    // Retrieve the jobs from localStorage
-    const jobs = JSON.parse(localStorage.getItem('jobs')) || [];
-
-    // Find the current job
-    const job = jobs.find(j => j.jobId === jobId);
-
-    // Determine the next transmittal number by counting existing transmittals
-    const transmittalCount = job?.transmittals?.length || 0;
-    const nextTransmittalNumber = transmittalCount + 1;
-
-    // Return formatted Transmittal ID: TRANS-JobID-Number
-    return `TRANS-${jobId}-00${nextTransmittalNumber}`;
+  function handleRevisionClick(revisionId) {
+    setSelectedRevisionId(revisionId);
+    setAdditionalDetailModal(true)
   }
 
-  //open create modal
-  function openCreateTransmittalModal() {
-    const jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-    const jobId = localStorage.getItem("currentJobId");
-    const job = jobs.find((j) => j.jobId === jobId);
-
-    if (!job || !job.incomingDocs) {
-      alert("No incoming documents found for this job.");
-      return;
-    }
-
-    // Prepare file data with revisions
-    const fileData = job.incomingDocs.map((doc) => ({
-      srNo: doc.srNo,
-      fileName: doc.fileName,
-      revisions: doc.revisions.map((rev) => rev.revision),
-    }));
-    setFiles(fileData); // Update state with files
-    setCreateNewTransmittal(true); // Open modal
-  };
 
   // open notify modal
   function openNotifyModal(id) {
@@ -824,6 +622,22 @@ function EnggJobDetail() {
     });
 
     setNotifyModal(false);
+  };
+
+
+  const handleSaveRevisionDetails = () => {
+    setRevisions((prevRevisions) => {
+      const updatedRevisions = prevRevisions.map((revision) =>
+        revision.id === selectedRevisionId
+          ? { ...revision, issuePurpose, comment }
+          : revision
+      );
+  
+      updateLocalStorage(updatedRevisions); // Save to local storage
+      return updatedRevisions;
+    });
+  
+    setAdditionalDetailModal(false);
   };
 
 
@@ -1320,7 +1134,7 @@ function EnggJobDetail() {
                               {modalData.revisions.map((revision, index) => {
                                 const incomingFeedback = modalData.incomingRevisions[index] || [];
                                 const lastFeedback = incomingFeedback.length > 0 ? incomingFeedback[incomingFeedback.length - 1] : {};
-                                const commentCode = lastFeedback.commentCode|| "N/A";
+                                const commentCode = lastFeedback.commentCode || "N/A";
 
 
                                 let bgColor;
@@ -1421,20 +1235,34 @@ function EnggJobDetail() {
                       <tbody id="revision-history-body">
                         {revisions.map((revision, index) => (
                           <tr key={index}>
-                            <td className="text-center" >{index}</td>
-                            <td className="text-center" >
+                            <td className="text-center align-midle" >{index}</td>
+                            <td className="text-center align-midle" >
                               <Link to={revision.fileLink} target="_blank" rel="noopener noreferrer" title="Download">
                                 {revision.hash}
                               </Link>
                             </td>
-                            <td className="text-center" >{revision.date}</td>
-                            <td className="text-center" >{revision.pageCount}</td>
-                            <td className="text-center" >{revision.size}</td>
-                            <td className="text-center" >
-                              <FaTimes
-                                style={{ color: 'red', cursor: 'pointer' }}
-                                onClick={() => handleDeleteRevision(revision.id)}
-                              />
+                            <td className="text-center align-midle" >{revision.date}</td>
+                            <td className="text-center align-midle" >{revision.pageCount}</td>
+                            <td className="text-center align-midle" >{revision.size}</td>
+                            <td className="text-center align-midle" >
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-evenly" }}>
+                                <FaTimes
+                                  style={{ color: 'red', cursor: 'pointer' }}
+                                  onClick={() => handleDeleteRevision(revision.id)}
+                                />
+                                <span style={{ borderLeft: "1px solid black", height: "20px", margin: "0 5px" }}></span>
+
+                                <Link
+                                  to="#"
+                                  className="revision-link"
+                                  onClick={(e) => {
+                                    e.preventDefault(); // Prevent default anchor behavior
+                                    handleRevisionClick(revision.id);
+                                  }}
+                                >
+                                  <i class="fa fa-plus" aria-hidden="true"></i>
+                                </Link>
+                              </div>
                             </td>
 
                           </tr>
@@ -1459,6 +1287,76 @@ function EnggJobDetail() {
                     </Button>
                   </Modal.Footer>
                 </Modal>
+
+
+                {/* ADD REVISION PURPOSE ISSUE AND ADITIONAL COMMENT */}
+
+                <Modal
+                  show={additionalDetailModal}
+                  onHide=""
+                  size="xl"
+                  aria-labelledby="contained-modal-title-vcenter"
+                  centered
+                  id="createTransmittalModal"
+                >
+                  <Modal.Header closebutton>
+                    <Modal.Title id="contained-modal-title-vcenter">
+                      ADDITIONAL DETAILS
+                    </Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body id="createTransmittalForm">
+                    <div className="notify-department-selection px-32">
+                      <div className="text-center mb-3 col-12">
+                        <input
+                          type="text"
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          placeholder="Add Comments here"
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "10px",
+                            width: "100%",
+                            textAlign: "left",
+                            borderRadius: "5px",
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label>ADD ISSUE PURPOSE</label>
+
+                        <select
+                          className="form-select"
+                          value={issuePurpose}
+                          onChange={(e) => setIssuePurpose(e.target.value)}
+                        >
+                          <option value="">Select Purpose</option>
+                          <option value="FA">FA - For Approval</option>
+                          <option value="FI">FI - For Information</option>
+                          <option value="FR">FR - For Review</option>
+                          <option value="FD">FD - For Records</option>
+                        </select>
+
+                      </div>
+                    </div>
+                  </Modal.Body>
+                  <Modal.Footer>
+
+                    <Button
+                      className="btn rounded-pill btn-secondary text-secondary-600 radius-8 px-20 py-11"
+                      onClick={handleSaveRevisionDetails}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      className="btn rounded-pill btn-danger-100 text-danger-900 radius-8 px-20 py-11"
+                      onClick={() =>  setAdditionalDetailModal(false)}
+                    >
+                      Close
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+
               </div>
             </div>
           </div>
