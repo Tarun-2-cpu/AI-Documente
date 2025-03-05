@@ -8,16 +8,16 @@ import { useNavigate } from 'react-router-dom';
 function BDDashboard() {
   // let { createChartThree } = useReactApexChart()
   const [showModal, setShowModal] = useState(false);
-  const [jobId, setJobId] = useState('Job01');
-  const [jobName, setJobName] = useState('Project-Manager');
-  const [description, setDescription] = useState('New-Job');
-  const [poNumber, setPoNumber] = useState('PO#11');
+  const [jobId, setJobId] = useState('');
+  const [jobName, setJobName] = useState('');
+  const [description, setDescription] = useState('');
+  const [poNumber, setPoNumber] = useState('');
   const [poDate, setPoDate] = useState('');
   const [jobs, setJobs] = useState([]);
   const [file, setFile] = useState('');
-  const [client, setClient] = useState('Aramco');
-  const [epc, setEPC] = useState('EPC#001');
-  const [endUser, setEndUser] = useState('EU#123');
+  const [client, setClient] = useState('');
+  const [epc, setEPC] = useState('');
+  const [endUser, setEndUser] = useState('');
   
 
   const navigate = useNavigate();
@@ -221,7 +221,7 @@ function BDDashboard() {
                         <div className="">
                           <label className="" id="">PO Number</label>
                         </div>
-                        <input type="text" className="form-control" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} id="poNumber" placeholder='PO#11' />
+                        <input type="text" className="form-control" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} id="poNumber" placeholder='PO Number' />
                       </div>
 
                       <div className="mb-3">
@@ -251,21 +251,21 @@ function BDDashboard() {
                         <div className="">
                           <label className="" id="">Client</label>
                         </div>
-                        <input type="text" className="form-control" value={client} onChange={(e)=> setClient(e.target.value)} id="client" placeholder="Aramco" />
+                        <input type="text" className="form-control" value={client} onChange={(e)=> setClient(e.target.value)} id="client" placeholder="Client" />
                       </div>
 
                       <div className="mb-3">
                         <div className="">
                           <label className="" id="">EPC</label>
                         </div>
-                        <input type="text" className="form-control" value={epc} onChange={(e)=>setEPC(e.target.value)} id="epc" placeholder="EPC#001" />
+                        <input type="text" className="form-control" value={epc} onChange={(e)=>setEPC(e.target.value)} id="epc" placeholder="EPC" />
                       </div>
 
                       <div className="mb-3">
                         <div className="">
                           <label className="" id="">End User</label>
                         </div>
-                        <input type="text" className="form-control" value={endUser} onChange={(e)=>setEndUser(e.target.value)} id="endUser" placeholder='EU#123' />
+                        <input type="text" className="form-control" value={endUser} onChange={(e)=>setEndUser(e.target.value)} id="endUser" placeholder='End User' />
                       </div>
                     </div>
                     <div className="modal-footer">

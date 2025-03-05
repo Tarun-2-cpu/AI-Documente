@@ -14,14 +14,14 @@ import Swal from 'sweetalert2';
 import Form from 'react-bootstrap/Form';
 
 const defaultRow = {
-  fileDescription: "Default Description",
-  equipmentTag: "Default Tag",
-  nmrCode: "Default NMR Code",
-  clientCode: "Default Client Code",
-  clientDocumentNo: "Default Client Doc No.",
-  zsDocumentNo: "Default Company Doc. No.",
-  plannedDate: "2023-01-01",
-  ownerEmail: "default@example.com",
+  fileDescription: "",
+  equipmentTag: "",
+  nmrCode: "",
+  clientCode: "",
+  clientDocumentNo: "",
+  zsDocumentNo: "",
+  plannedDate: "2025-01-01",
+  ownerEmail: "",
 };
 
 
