@@ -141,11 +141,10 @@ const SignInLayer = () => {
                                 variant="outline-success"
                             >
                                 <i class="fas fa-cloud-download-alt" style={{ marginRight: 6 + 'px' }}></i>
-                                Save Data
                             </Button>
 
                             <label class="btn btn-outline-primary">
-                                <i class="fas fa-upload" style={{ marginRight: 6 + 'px' }}></i> Upload File
+                                <i class="fas fa-upload" style={{ marginRight: 6 + 'px' }}></i>
                                 <input type="file" accept="application/json" onChange={restoreDataFromFile} className="form-control" hidden />
                             </label>
                             

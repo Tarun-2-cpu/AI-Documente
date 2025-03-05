@@ -25,7 +25,6 @@ function ClearCacheButton() {
       }}
     >
       <i class="fas fa-trash-alt" style={{ marginRight: 6 + "px" }}></i>
-      Clear Cache
     </Button>
   );
 }
